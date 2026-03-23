@@ -41,6 +41,7 @@ function App({ onLogout }) {
   const [chatInput, setChatInput] = useState('');
   const [dollarValue, setDollarValue] = useState(chatMessages[0]?.text.match(/\d+\.\d+/)?.[0] || '');
 
+  const [selectedCountry, setSelectedCountry] = useState('All');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
   const [showDashboard, setShowDashboard] = useState(false);
@@ -303,6 +304,13 @@ function App({ onLogout }) {
 
   const getFilteredData = () => {
     let filtered = sheetData;
+
+    if (selectedCountry !== 'All') {
+      const countryIndex = headers.findIndex(h => h.toLowerCase() === 'country');
+      if (countryIndex !== -1) {
+        filtered = filtered.filter(row => row[countryIndex]?.toLowerCase() === selectedCountry.toLowerCase());
+      }
+    }
     
     if (selectedTower !== 'All') {
       const towerIndex = headers.findIndex(h => h.toLowerCase().includes('tower'));
@@ -540,19 +548,23 @@ function App({ onLogout }) {
     <div className="excel-viewer">
       <div className="file-selection-section">
         <div className="header-top">
+          <img src="/Cognizant-logo.jpg" alt="Cognizant" className="header-logo header-logo-left" />
           <h1>Verizon Home & Marketing Burnsheet</h1>
-          <span className="welcome-text">Welcome, Admin 👋</span>
-          <div className="profile-menu" ref={profileRef}>
-            <button className="profile-btn" onClick={() => setIsProfileOpen(!isProfileOpen)}>
-              <span className="profile-icon">👤</span>
-              <span className="profile-arrow">{isProfileOpen ? '▲' : '▼'}</span>
-            </button>
-            {isProfileOpen && (
-              <div className="profile-dropdown">
-                <div className="profile-dropdown-item" onClick={() => { alert('My Profile'); setIsProfileOpen(false); }}>👤 My Profile</div>
-                <div className="profile-dropdown-item logout-item" onClick={() => { setIsProfileOpen(false); onLogout(); }}>🚪 Logout</div>
-              </div>
-            )}
+          <div className="header-right">
+            <img src="/Screenshot 2026-03-23 135916.png" alt="Verizon" className="header-logo header-logo-right" />
+            <div className="profile-menu" ref={profileRef}>
+              <span className="welcome-text">Welcome, Admin 👋</span>
+              <button className="profile-btn" onClick={() => setIsProfileOpen(!isProfileOpen)}>
+                <span className="profile-icon">👤</span>
+                <span className="profile-arrow">{isProfileOpen ? '▲' : '▼'}</span>
+              </button>
+              {isProfileOpen && (
+                <div className="profile-dropdown">
+                  <div className="profile-dropdown-item" onClick={() => { alert('My Profile'); setIsProfileOpen(false); }}>👤 My Profile</div>
+                  <div className="profile-dropdown-item logout-item" onClick={() => { setIsProfileOpen(false); onLogout(); }}>🚪 Logout</div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         
@@ -563,6 +575,17 @@ function App({ onLogout }) {
 
       {headers.length > 0 && (
         <>
+          <div className="country-tabs">
+            {['All', 'India', 'USA'].map(country => (
+              <button
+                key={country}
+                className={`country-tab ${selectedCountry === country ? 'active' : ''}`}
+                onClick={() => setSelectedCountry(country)}
+              >
+                {country}
+              </button>
+            ))}
+          </div>
           <div className="filter-export-bar">
             <div className="filter-section">
               {dropdownOptions.tower.length > 0 && (
