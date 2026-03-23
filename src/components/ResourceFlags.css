@@ -1,0 +1,336 @@
+.resource-flags-container {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.952);
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 35px;
+  height: 100%;
+  min-height: 800px;
+  transition: all 0.3s ease;
+}
+
+.resource-flags-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.pie-chart-section {
+  background: transparent;
+  border-radius: 0px;
+  padding: 0px;
+  box-shadow: none;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: none;
+  min-height: auto;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.pie-chart-section h2 {
+  margin: 0;
+  margin-bottom: 10px;
+  color: #1e3c72;
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.total-count {
+  margin: 0;
+  color: #7f8c8d;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.pie-chart-wrapper {
+  width: 100%;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: auto;
+  padding-top: 0px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pie-chart-wrapper:hover {
+  transform: scale(1.02);
+}
+
+.pie-chart-card {
+  width: 100%;
+  background: white;
+  border-radius: 10px;
+  padding: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  justify-content: flex-start;
+  transition: all 0.3s ease;
+  height: auto;
+}
+
+.pie-chart-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.pie-chart-container {
+  width: 100%;
+  height: 220px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
+  flex-shrink: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  overflow: visible;
+}
+
+.custom-legend {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 0;
+  align-items: start;
+  justify-items: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  width: auto;
+  justify-content: center;
+  min-width: 140px;
+}
+
+.legend-item:hover {
+  background: #ecf0f1;
+  transform: translateY(-2px);
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  color: #1e3c72;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.custom-tooltip {
+  background: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid #ecf0f1;
+}
+
+.custom-tooltip p {
+  margin: 4px 0;
+  font-size: 12px;
+  color: #2c3e50;
+}
+
+/* Recharts Legend Styling */
+.recharts-wrapper {
+  width: 100%;
+}
+
+/* Recharts Surface - Position labels inside pie slices */
+.recharts-surface {
+  overflow: visible !important;
+}
+
+/* Pie slice labels positioning */
+.recharts-pie .recharts-label-list {
+  pointer-events: none;
+}
+
+/* Increase pie chart sector size by 80% */
+.recharts-layer.recharts-pie-sector {
+  transform: scale(1.8);
+  transform-origin: center;
+}
+
+.recharts-pie text {
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  fill: #ffffff !important;
+  text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.6) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+}
+
+@media (max-width: 1024px) {
+  .resource-flags-container {
+    padding: 20px;
+  }
+
+  .pie-chart-card {
+    gap: 20px;
+  }
+
+  .pie-chart-container {
+    width: 45%;
+  }
+
+  .custom-legend {
+    width: 55%;
+  }
+}
+
+@media (max-width: 768px) {
+  .resource-flags-container {
+    padding: 20px;
+  }
+
+  .pie-chart-section h2 {
+    font-size: 14px;
+  }
+
+  .total-count {
+    font-size: 11px;
+  }
+
+  .pie-chart-card {
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+  }
+
+  .pie-chart-container {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .custom-legend {
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+    height: auto;
+  }
+
+  .legend-item {
+    width: auto;
+    justify-content: center;
+  }
+}
+
+/* Area Graph Card Styles */
+.area-chart-container {
+  display: flex;
+  flex-direction: column;
+  gap: 70px;
+  background: transparent;
+  padding: 0px;
+  border-radius: 0px;
+  box-shadow: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.area-chart-container:hover {
+  transform: translateY(-2px);
+}
+
+/* Area Graph Section */
+.area-graph-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.area-graph-section h2 {
+  color: #1e3c72;
+  font-size: 1.2rem;
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.area-chart-wrapper {
+  width: 100%;
+  height: 300px;
+}
+
+.area-chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  padding-top: 15px;
+  padding-bottom: 0px;
+}
+
+.area-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #1e3c72;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.area-legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.area-legend-label {
+  color: #1e3c72;
+  font-weight: 500;
+}
+
+/* Responsive Design for Area Graph */
+@media (max-width: 768px) {
+  .area-chart-container {
+    padding: 0px;
+  }
+
+  .area-graph-section {
+    padding: 20px;
+    gap: 15px;
+  }
+
+  .area-chart-wrapper {
+    height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .area-graph-section {
+    padding: 15px;
+  }
+
+  .area-chart-wrapper {
+    height: 200px;
+  }
+}

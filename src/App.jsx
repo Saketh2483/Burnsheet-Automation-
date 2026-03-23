@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import CombinedDashboard from './components/CombinedDashboard';
+import { loadAndProcessExcelData } from './utils/excelLoader';
+import { loadIndividualBurnData } from './utils/individualBurnLoader';
+import { loadResourceFlagsData } from './utils/resourceFlagsLoader';
 import './App.css';
 
 const PRIORITY_COLUMNS = [
@@ -37,6 +43,24 @@ function App({ onLogout }) {
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [dashboardData, setDashboardData] = useState({ overall: null, individual: null, resourceFlags: null, loading: false, error: null });
+
+  const handleOpenDashboard = async () => {
+    setShowDashboard(true);
+    if (dashboardData.overall) return;
+    setDashboardData(prev => ({ ...prev, loading: true, error: null }));
+    try {
+      const [overall, individual, resourceFlags] = await Promise.all([
+        loadAndProcessExcelData(),
+        loadIndividualBurnData(),
+        loadResourceFlagsData()
+      ]);
+      setDashboardData({ overall, individual, resourceFlags, loading: false, error: null });
+    } catch (err) {
+      setDashboardData(prev => ({ ...prev, loading: false, error: err.message }));
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -325,6 +349,65 @@ function App({ onLogout }) {
     }
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    const filteredData = getFilteredData();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 30;
+    const usableWidth = pageWidth - margin * 2;
+
+    // Auto-calculate column widths based on content
+    const colWidths = headers.map((header, colIdx) => {
+      const maxContentLen = filteredData.reduce((max, row) => {
+        const val = row[colIdx] ? String(row[colIdx]).length : 0;
+        return Math.max(max, val);
+      }, header.length);
+      return Math.min(Math.max(maxContentLen * 5.5, 40), 160);
+    });
+
+    const totalCalc = colWidths.reduce((a, b) => a + b, 0);
+    const scale = usableWidth / totalCalc;
+    const scaledWidths = colWidths.map(w => w * scale);
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Verizon Home & Marketing Burnsheet', margin, 30);
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Tower: ${selectedTower}   |   Month: ${selectedMonth}   |   Records: ${filteredData.length}   |   $ Value: ${dollarValue}`, margin, 46);
+
+    autoTable(doc, {
+      head: [headers],
+      body: filteredData,
+      startY: 56,
+      styles: {
+        fontSize: 6.5,
+        cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
+        overflow: 'ellipsize',
+        halign: 'left',
+        valign: 'middle',
+        lineColor: [220, 220, 220],
+        lineWidth: 0.3,
+      },
+      headStyles: {
+        fillColor: [220, 0, 0],
+        textColor: 255,
+        fontStyle: 'bold',
+        fontSize: 6.5,
+        halign: 'left',
+        valign: 'middle',
+      },
+      alternateRowStyles: { fillColor: [248, 248, 248] },
+      columnStyles: Object.fromEntries(scaledWidths.map((w, i) => [i, { cellWidth: w }])),
+      margin: { left: margin, right: margin },
+      tableWidth: usableWidth,
+    });
+
+    const timestamp = new Date().toISOString().slice(0, 10);
+    doc.save(`burnsheet-summary-${timestamp}.pdf`);
+  };
+
   const handleReconciliation = () => {
     alert('🔄 Reconciliation Started!\n\nChecking data integrity and validating all entries...');
     // Future: Add actual reconciliation logic here
@@ -534,8 +617,8 @@ function App({ onLogout }) {
               </button>
               <button className="export-btn save-btn" onClick={saveToExcel} title="Save all changes to Excel file">💾 Save</button>
               <button className="export-btn excel-btn" onClick={exportToExcel} title="Export filtered data as Excel">📊 Export</button>
-              <button className="export-btn pdf-btn" onClick={() => alert('PDF export feature coming soon!')} title="Export as PDF Summary">📄 PDF</button>
-              <button className="export-btn dashboard-btn" onClick={() => alert('Dashboard view coming soon!')} title="View Dashboard">📈 Dashboard</button>
+              <button className="export-btn pdf-btn" onClick={exportToPDF} title="Export as PDF Summary">📄 PDF</button>
+              <button className="export-btn dashboard-btn" onClick={handleOpenDashboard} title="View Dashboard">📈 Dashboard</button>
             </div>
           </div>
 
@@ -561,6 +644,25 @@ function App({ onLogout }) {
             </table>
           </div>
         </>
+      )}
+
+      {/* Dashboard Overlay */}
+      {showDashboard && (
+        <div style={{ position: 'fixed', inset: 0, background: '#f0f2f5', zIndex: 2000, overflowY: 'auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 28px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+            <h2 style={{ color: 'white', margin: 0 }}>📈 Rate Analysis Dashboard</h2>
+            <button onClick={() => setShowDashboard(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: 20, borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}>✕ Back</button>
+          </div>
+          {dashboardData.loading && <div style={{ textAlign: 'center', padding: 60, fontSize: 20 }}>⏳ Loading Dashboard...</div>}
+          {dashboardData.error && <div style={{ textAlign: 'center', padding: 40, color: 'red' }}>❌ {dashboardData.error}</div>}
+          {dashboardData.overall && dashboardData.individual && dashboardData.resourceFlags && (
+            <CombinedDashboard
+              overallData={dashboardData.overall}
+              individualData={dashboardData.individual}
+              resourceFlagsData={dashboardData.resourceFlags}
+            />
+          )}
+        </div>
       )}
 
       {/* Chat Icon Button */}
