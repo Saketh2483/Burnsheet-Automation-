@@ -781,129 +781,138 @@ function App({ onLogout }) {
 
       {headers.length > 0 && (
         <>
-          <div className="country-tabs">
-            {['India', 'USA'].map(country => (
-              <div
-                key={country}
-                className={`country-tab ${selectedCountry === country ? 'active' : ''}`}
-                onClick={() => setSelectedCountry(country)}
-              >
-                {country}
+          {!showDashboard && (
+            <>
+              <div className="country-tabs">
+                {['India', 'USA'].map(country => (
+                  <div
+                    key={country}
+                    className={`country-tab ${selectedCountry === country ? 'active' : ''}`}
+                    onClick={() => setSelectedCountry(country)}
+                  >
+                    {country}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div className="filter-export-bar">
-            <div className="filter-section">
-              {dropdownOptions.tower.length > 0 && (
-                <div className="filter-group">
-                  <label htmlFor="tower-select">Filter by Tower:</label>
-                  <select id="tower-select" value={selectedTower} onChange={(e) => setSelectedTower(e.target.value)} className="filter-dropdown">
-                    {dropdownOptions.tower.map((tower, idx) => <option key={`tower-${idx}`} value={tower}>{tower}</option>)}
-                  </select>
+              <div className="filter-export-bar">
+                <div className="filter-section">
+                  {dropdownOptions.tower.length > 0 && (
+                    <div className="filter-group">
+                      <label htmlFor="tower-select">Filter by Tower:</label>
+                      <select id="tower-select" value={selectedTower} onChange={(e) => setSelectedTower(e.target.value)} className="filter-dropdown">
+                        {dropdownOptions.tower.map((tower, idx) => <option key={`tower-${idx}`} value={tower}>{tower}</option>)}
+                      </select>
+                    </div>
+                  )}
+
+                  {dropdownOptions.month.length > 0 && (
+                    <div className="filter-group">
+                      <label htmlFor="month-select">Filter by Month:</label>
+                      <select id="month-select" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="filter-dropdown">
+                        {dropdownOptions.month.map((month, idx) => <option key={`month-${idx}`} value={month}>{month}</option>)}
+                      </select>
+                    </div>
+                  )}
                 </div>
-              )}
 
-              {dropdownOptions.month.length > 0 && (
-                <div className="filter-group">
-                  <label htmlFor="month-select">Filter by Month:</label>
-                  <select id="month-select" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="filter-dropdown">
-                    {dropdownOptions.month.map((month, idx) => <option key={`month-${idx}`} value={month}>{month}</option>)}
-                  </select>
-                </div>
-              )}
-            </div>
-
-            {/* Dollar Value Editable Text Box - moved between Filter by Month and Reconcile button */}
-            <div className="dollar-value-box">
-              <label htmlFor="dollar-value-input">$ Value:</label>
-              <input
-                id="dollar-value-input"
-                type="number"
-                step="0.01"
-                value={dollarValue}
-                onChange={e => {
-                  const newValue = e.target.value;
-                  setDollarValue(newValue);
-                  setChatMessages(prev => {
-                    const updated = [...prev];
-                    if (updated[0]) {
-                      updated[0].text = `Last updated dollar value is ${newValue}. Needs to update please enter the value.`;
-                    }
-                    return updated;
-                  });
-                }}
-              />
-            </div>
-
-            <div className="export-section">
-              <button 
-                className={`export-btn reconcile-btn ${!hasChanges ? 'disabled' : 'active'}`}
-                onClick={handleReconciliation}
-                disabled={!hasChanges}
-                title={hasChanges ? "Reconcile and validate the data" : "Make changes to enable reconciliation"}
-              >
-                🔄 Reconcile
-              </button>
-              <button className="export-btn save-btn" onClick={saveToExcel} title="Save all changes to Excel file">💾 Save</button>
-              <button className="export-btn excel-btn" onClick={exportToExcel} title="Export filtered data as Excel">📊 Export</button>
-              <button className="export-btn pdf-btn" onClick={exportToPDF} title="Export as PDF Summary">📄 PDF</button>
-              <button className="export-btn dashboard-btn" onClick={handleOpenDashboard} title="View Dashboard">📈 Dashboard</button>
-            </div>
-          </div>
-
-          <div className="table-wrapper">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  {headers.map((header, index) => {
-                    // Hide "Hourly Rate(Rs)" column when USA is selected
-                    if (selectedCountry === 'USA' && header.toLowerCase().includes('hourly rate') && header.toLowerCase().includes('rs')) {
-                      return null;
-                    }
-                    return <th key={`header-${index}`} data-column={header}>{header}</th>;
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {getFilteredData().map((row, rowIndex) => {
-                  const paddedRow = [...row];
-                  while (paddedRow.length < headers.length) paddedRow.push('');
-                  
-                  return (
-                    <tr key={`row-${rowIndex}`}>
-                      {paddedRow.map((_, cellIndex) => {
-                        // Hide "Hourly Rate(Rs)" column when USA is selected
-                        if (selectedCountry === 'USA' && headers[cellIndex].toLowerCase().includes('hourly rate') && headers[cellIndex].toLowerCase().includes('rs')) {
-                          return null;
+                {/* Dollar Value Editable Text Box - moved between Filter by Month and Reconcile button */}
+                <div className="dollar-value-box">
+                  <label htmlFor="dollar-value-input">$ Value:</label>
+                  <input
+                    id="dollar-value-input"
+                    type="number"
+                    step="0.01"
+                    value={dollarValue}
+                    onChange={e => {
+                      const newValue = e.target.value;
+                      setDollarValue(newValue);
+                      setChatMessages(prev => {
+                        const updated = [...prev];
+                        if (updated[0]) {
+                          updated[0].text = `Last updated dollar value is ${newValue}. Needs to update please enter the value.`;
                         }
-                        return renderCell(paddedRow, cellIndex, rowIndex, headers[cellIndex] || '');
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+                        return updated;
+                      });
+                    }}
+                  />
+                </div>
 
-      {/* Dashboard Overlay */}
-      {showDashboard && (
-        <div style={{ position: 'fixed', inset: 0, background: '#f0f2f5', zIndex: 2000, overflowY: 'auto' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 28px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-            <h2 style={{ color: 'white', margin: 0 }}>📈 Rate Analysis Dashboard</h2>
-            <button onClick={() => setShowDashboard(false)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: 20, borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}>✕ Back</button>
-          </div>
-          {dashboardData.loading && <div style={{ textAlign: 'center', padding: 60, fontSize: 20 }}>⏳ Loading Dashboard...</div>}
-          {dashboardData.error && <div style={{ textAlign: 'center', padding: 40, color: 'red' }}>❌ {dashboardData.error}</div>}
-          {dashboardData.overall && dashboardData.individual && dashboardData.resourceFlags && (
-            <CombinedDashboard
-              overallData={dashboardData.overall}
-              individualData={dashboardData.individual}
-              resourceFlagsData={dashboardData.resourceFlags}
-            />
+                <div className="export-section">
+                  {!showDashboard && (
+                    <>
+                      <button 
+                        className={`export-btn reconcile-btn ${!hasChanges ? 'disabled' : 'active'}`}
+                        onClick={handleReconciliation}
+                        disabled={!hasChanges}
+                        title={hasChanges ? "Reconcile and validate the data" : "Make changes to enable reconciliation"}
+                      >
+                        🔄 Reconcile
+                      </button>
+                      <button className="export-btn save-btn" onClick={saveToExcel} title="Save all changes to Excel file">💾 Save</button>
+                      <button className="export-btn excel-btn" onClick={exportToExcel} title="Export filtered data as Excel">📊 Export</button>
+                      <button className="export-btn pdf-btn" onClick={exportToPDF} title="Export as PDF Summary">📄 PDF</button>
+                      <button className="export-btn dashboard-btn" onClick={handleOpenDashboard} title="View Dashboard">📈 Dashboard</button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
           )}
-        </div>
+
+          {showDashboard ? (
+            // Dashboard View
+            <div style={{ background: '#f0f2f5', minHeight: '70vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 28px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', marginBottom: '20px' }}>
+                <h2 style={{ color: 'white', margin: 0 }}>📈 Rate Analysis Dashboard</h2>
+                <button onClick={() => setShowDashboard(false)} className="export-btn burnsheet-btn" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: 14, borderRadius: 8, padding: '8px 16px', cursor: 'pointer', marginRight: '10px' }} title="Back to Burnsheet">📋 Burnsheet</button>
+              </div>
+              {dashboardData.loading && <div style={{ textAlign: 'center', padding: 60, fontSize: 20 }}>⏳ Loading Dashboard...</div>}
+              {dashboardData.error && <div style={{ textAlign: 'center', padding: 40, color: 'red' }}>❌ {dashboardData.error}</div>}
+              {dashboardData.overall && dashboardData.individual && dashboardData.resourceFlags && (
+                <CombinedDashboard
+                  overallData={dashboardData.overall}
+                  individualData={dashboardData.individual}
+                  resourceFlagsData={dashboardData.resourceFlags}
+                />
+              )}
+            </div>
+          ) : (
+            // Table View
+            <div className="table-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    {headers.map((header, index) => {
+                      // Hide "Hourly Rate(Rs)" column when USA is selected
+                      if (selectedCountry === 'USA' && header.toLowerCase().includes('hourly rate') && header.toLowerCase().includes('rs')) {
+                        return null;
+                      }
+                      return <th key={`header-${index}`} data-column={header}>{header}</th>;
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {getFilteredData().map((row, rowIndex) => {
+                    const paddedRow = [...row];
+                    while (paddedRow.length < headers.length) paddedRow.push('');
+                    
+                    return (
+                      <tr key={`row-${rowIndex}`}>
+                        {paddedRow.map((_, cellIndex) => {
+                          // Hide "Hourly Rate(Rs)" column when USA is selected
+                          if (selectedCountry === 'USA' && headers[cellIndex].toLowerCase().includes('hourly rate') && headers[cellIndex].toLowerCase().includes('rs')) {
+                            return null;
+                          }
+                          return renderCell(paddedRow, cellIndex, rowIndex, headers[cellIndex] || '');
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
 
       {/* Chat Icon Button */}
