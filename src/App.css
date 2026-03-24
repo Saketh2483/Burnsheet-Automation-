@@ -325,36 +325,31 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 30px;
+  gap: 20px;
   margin: 0;
-  padding: 20px 25px;
+  padding: 12px 25px;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   border-radius: 0;
   box-shadow: none;
   flex-wrap: wrap;
+  min-height: auto;
 }
 
 /* Filter Section */
 .filter-section {
   display: flex;
-  gap: 50px;
+  gap: 24px;
   align-items: center;
-  flex: 1;
-  min-width: 300px;
-}
-
-/* Filter Section */
-.filter-section {
-  display: flex;
-  gap: 16px;
-  align-items: flex-end;
+  flex: 0 1 auto;
+  min-width: auto;
 }
 
 /* Filter Group */
 .filter-group {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
   white-space: nowrap;
 }
 
@@ -362,69 +357,75 @@ body {
   color: #333;
   font-weight: 600;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: 12px;
+  height: auto;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  line-height: 1.2;
 }
 
 /* Filter Dropdown */
 .filter-dropdown {
-  padding: 10px 15px;
-  border: 2px solid #ddd;
-  border-radius: 8px;
+  padding: 8px 36px 8px 12px;
+  border: 2px solid #ccc;
+  border-radius: 6px;
   font-size: 0.95rem;
+  font-weight: 500;
   cursor: pointer;
-  background: white;
-  color: #333;
-  transition: all 0.3s ease;
+  background: linear-gradient(to bottom, #ffffff 0%, #f9f9f9 100%);
+  color: #1a1a1a;
+  transition: all 0.25s ease;
   min-width: 160px;
   height: 40px;
+  line-height: 24px;
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
-  background-position: right 12px center;
+  background-position: right 8px center;
   background-size: 20px;
-  padding-right: 40px;
   box-sizing: border-box;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .filter-dropdown option {
-  padding: 10px 15px;
+  padding: 12px 15px;
   background-color: white;
-  color: #333;
+  color: #1a1a1a;
+  font-weight: 500;
 }
 
 .filter-dropdown:hover {
   border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(to bottom, #ffffff 0%, #f5f7ff 100%);
 }
 
 .filter-dropdown:focus {
   outline: none;
   border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15), 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(to bottom, #ffffff 0%, #f5f7ff 100%);
 }
 
 /* Export Section */
 .export-section {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   align-items: center;
   flex-wrap: wrap;
   justify-content: flex-end;
-}
-
-/* Export Section */
-.export-section {
-  display: flex;
-  gap: 10px;
-  align-items: flex-end;
+  margin-top: 0;
+  padding-top: 12px;
 }
 
 .export-btn {
-  padding: 10px 20px;
+  padding: 8px 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 5px;
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
@@ -432,27 +433,17 @@ body {
   white-space: nowrap;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   height: 40px;
+  line-height: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  background: #0078d4;
+  color: #fff;
 }
 
 .export-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.export-btn {
-  padding: 8px 18px;
-  border-radius: 5px;
-  border: none;
-  font-size: 1rem;
-  font-weight: 500;
-  background: #0078d4;
-  color: #fff;
-  cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
 }
 
 .export-btn.disabled {
@@ -787,45 +778,77 @@ body {
 /* Cell Dropdown */
 .cell-dropdown {
   width: 100%;
-  padding: 6px 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 8px 28px 8px 10px;
+  border: 2px solid #bbb;
+  border-radius: 5px;
   font-size: 13px;
+  font-weight: 500;
   font-family: inherit;
-  background-color: white;
-  color: #333;
+  background: linear-gradient(to bottom, #ffffff 0%, #f9f9f9 100%);
+  color: #1a1a1a;
   cursor: pointer;
-  transition: all 0.2s ease;
-  height: 36px;
+  transition: all 0.25s ease;
+  height: 38px;
   display: block;
   box-sizing: border-box;
   line-height: 20px;
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: right 6px center;
   background-size: 18px;
-  padding-right: 28px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .cell-dropdown option {
-  padding: 8px 12px;
+  padding: 10px 12px;
   background-color: white;
-  color: #333;
+  color: #1a1a1a;
+  font-weight: 500;
 }
 
 .cell-dropdown:hover {
   border-color: #667eea;
-  box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+  background: linear-gradient(to bottom, #ffffff 0%, #f5f7ff 100%);
 }
 
 .cell-dropdown:focus {
   outline: none;
   border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15), 0 2px 8px rgba(102, 126, 234, 0.25);
+  background: linear-gradient(to bottom, #ffffff 0%, #f5f7ff 100%);
+}
+
+/* Timesheet Input Field */
+.timesheet-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  background-color: #f0f7ff;
+  color: #333;
+  transition: all 0.2s ease;
+  height: 36px;
+  box-sizing: border-box;
+  line-height: 20px;
+}
+
+.timesheet-input:hover {
+  border-color: #667eea;
+  box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+  background-color: #ffffff;
+}
+
+.timesheet-input:focus {
+  outline: none;
+  border-color: #667eea;
   box-shadow: 0 0 8px rgba(102, 126, 234, 0.5);
-  background-color: #f9f9f9;
+  background-color: #ffffff;
 }
 
 /* Double width for Location and ACT/PCT columns */
@@ -916,26 +939,39 @@ body {
 
 .skill-dropdown {
   width: 100%;
-  background-color: #f0f0f0 !important;
-  color: #333;
+  background: linear-gradient(to bottom, #f8f9fc 0%, #f0f2ff 100%) !important;
+  color: #1a1a1a;
   font-size: 13px;
   font-weight: 500;
-  border: 1px dashed #667eea !important;
-  padding: 6px 8px;
-  margin-top: 6px;
+  border: 2px solid #667eea !important;
+  border-radius: 5px;
+  padding: 8px 28px 8px 10px;
+  margin-top: 8px;
   height: 38px;
   align-self: stretch;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 18px;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.15) !important;
 }
 
 .skill-dropdown:hover {
-  background-color: #e8e8f0 !important;
+  background: linear-gradient(to bottom, #f5f7ff 0%, #eef1ff 100%) !important;
+  border-color: #667eea !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25) !important;
 }
 
 .skill-dropdown:focus {
   outline: none;
-  border: 1px solid #667eea !important;
-  background-color: #ffffff !important;
-  box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+  border: 2px solid #667eea !important;
+  background: linear-gradient(to bottom, #ffffff 0%, #f5f7ff 100%) !important;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15), 0 4px 12px rgba(102, 126, 234, 0.25) !important;
 }
 
 /* Tooltip styling for ACT Code */
@@ -1311,42 +1347,46 @@ td[title] {
 
 /* Add styling for the dollar value box above the filter bar */
 .dollar-value-box {
-  margin: 16px 0 0 0;
+  margin: 0;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #f5f7fa;
-  border-radius: 6px;
-  padding: 8px 16px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-  font-size: 1.1rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  background: transparent;
+  border-radius: 5px;
+  padding: 0;
+  box-shadow: none;
+  font-size: 12px;
+  height: 100%;
+  justify-content: center;
 }
 .dollar-value-box label {
-  color: #2d3a4a;
+  color: #333;
   font-weight: 600;
-  margin-right: 8px;
+  margin-right: 0;
+  white-space: nowrap;
+  line-height: 1.2;
+  font-size: 12px;
 }
 .dollar-value-box input {
-  border: 1px solid #bfc7d5;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 1.1rem;
+  border: 2px solid #bfc7d5;
+  border-radius: 5px;
+  padding: 8px 10px;
+  font-size: 0.95rem;
   width: 120px;
-  background: #fff;
+  background: white;
   transition: border-color 0.2s;
+  height: 40px;
+  line-height: 24px;
+  font-weight: 500;
+  box-sizing: border-box;
 }
 .dollar-value-box input:focus {
-  border-color: #0078d4;
+  border-color: #667eea;
   outline: none;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15), 0 2px 8px rgba(102, 126, 234, 0.25);
 }
 /* Add spacing below the dollar value box */
 .header-top {
   margin-bottom: 12px;
-}
-.dollar-value-box {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 0;
-  margin-top: 0;
 }

@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import PropTypes from 'prop-types'
 import './MissingClassificationsAlert.css'
 
 function MissingClassificationsAlert({ data }) {
   const [editingRows, setEditingRows] = useState({})
-  const [displayedRows, setDisplayedRows] = useState(data?.missingRows || [])
+  const displayedRows = data?.missingRows || []
 
   if (!data || data.missingCount === 0) {
     return null
@@ -95,9 +96,10 @@ function MissingClassificationsAlert({ data }) {
                   const empIdKey = findColumnKey(row, ['empid', 'emp id', 'employee id'])
                   const empNameKey = findColumnKey(row, ['emp name', 'employee name', 'name'])
                   const rowIndex = row.rowIndex
+                  const uniqueKey = rowIndex !== undefined ? rowIndex : `row-${idx}`
 
                   return (
-                    <tr key={idx} className="missing-row">
+                    <tr key={uniqueKey} className="missing-row">
                       <td className="emp-id-cell">{empIdKey ? getEmpIdValue(row, empIdKey) : '—'}</td>
                       <td className="emp-name-cell">{empNameKey ? getDisplayValue(row, empNameKey) : '—'}</td>
                       <td className="classification-cell">
@@ -126,6 +128,13 @@ function MissingClassificationsAlert({ data }) {
       )}
     </div>
   )
+}
+
+MissingClassificationsAlert.propTypes = {
+  data: PropTypes.shape({
+    missingCount: PropTypes.number,
+    missingRows: PropTypes.arrayOf(PropTypes.object),
+  }),
 }
 
 export default MissingClassificationsAlert

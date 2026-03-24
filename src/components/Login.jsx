@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './Login.css'
 
 function Login({ onLoginSuccess }) {
@@ -6,6 +6,12 @@ function Login({ onLoginSuccess }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    return () => {
+      // Cleanup function to prevent state updates on unmounted component
+    }
+  }, [])
 
   const handleLogin = (e) => {
     e.preventDefault()
@@ -15,10 +21,11 @@ function Login({ onLoginSuccess }) {
     // Validate credentials
     if (username === 'admin' && password === 'admin') {
       // Simulate API delay
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         setIsLoading(false)
-        onLoginSuccess()
+        onLoginSuccess?.()
       }, 500)
+      return () => clearTimeout(timeoutId)
     } else {
       setIsLoading(false)
       setError('Invalid username or password. Try admin/admin')

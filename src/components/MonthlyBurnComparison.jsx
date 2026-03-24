@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   BarChart,
   Bar,
@@ -25,17 +25,10 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const targetColumns = ['Tower', 'Location', 'ACT/PCT', 'Verizon Level Mapping', 'Classification', 'Cognizant Designation', 'ESA Id', 'Service Line']
-
   // Load Excel data when custom view is selected
-  useEffect(() => {
-    if (currentView === 'custom' && !excelData) {
-      loadExcelData()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentView])
-
-  const loadExcelData = async () => {
+  const loadExcelData = useCallback(async () => {
+    const targetColumns = ['Tower', 'Location', 'ACT/PCT', 'Verizon Level Mapping', 'Classification', 'Cognizant Designation', 'ESA Id', 'Service Line']
+    
     try {
       setLoading(true)
       const response = await fetch('/Combined-H&M 1 1.xlsx')
@@ -71,7 +64,13 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
       setError('Failed to load data from Excel')
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (currentView === 'custom' && !excelData) {
+      loadExcelData()
+    }
+  }, [currentView, excelData, loadExcelData])
 
   const handleParameterChange = (e) => {
     const parameter = e.target.value

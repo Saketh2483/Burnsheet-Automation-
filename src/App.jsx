@@ -35,13 +35,14 @@ function App({ onLogout }) {
   const [tqDataMessage, setTqDataMessage] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
+  const initialChatMessages = [
     { id: 1, text: 'Last updated dollar value is 83.49. Needs to update please enter the value.', sender: 'bot' }
-  ]);
+  ];
+  const [chatMessages, setChatMessages] = useState(initialChatMessages);
   const [chatInput, setChatInput] = useState('');
-  const [dollarValue, setDollarValue] = useState(chatMessages[0]?.text.match(/\d+\.\d+/)?.[0] || '');
+  const [dollarValue, setDollarValue] = useState(initialChatMessages[0]?.text.match(/\d+\.\d+/)?.[0] || '');
 
-  const [selectedCountry, setSelectedCountry] = useState('All');
+  const [selectedCountry, setSelectedCountry] = useState('India');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
   const [showDashboard, setShowDashboard] = useState(false);
@@ -253,7 +254,8 @@ function App({ onLogout }) {
       const response = await fetch('/Combined-Input.xlsx');
       if (!response.ok) throw new Error('Failed to load file');
       
-      const arrayBuffer = await response.arrayBuffer();      const wb = XLSX.read(arrayBuffer, { type: 'array' });
+      const arrayBuffer = await response.arrayBuffer();
+      const wb = XLSX.read(arrayBuffer, { type: 'array' });
       
       processSheet(wb);
     } catch (error) {
@@ -273,6 +275,8 @@ function App({ onLogout }) {
   const handleCellChange = (rowIndex, cellIndex, newValue) => {
     const updatedData = [...sheetData];
     const isSkillSetColumn = headers[cellIndex]?.toLowerCase().includes('skill set');
+    const headerLower = headers[cellIndex]?.toLowerCase() || '';
+    const isTimesheetColumn = (headerLower.includes('timesheet') || (headerLower.includes('hours') && !headerLower.includes('hourly')));
     
     if (isSkillSetColumn) {
       const currentValue = updatedData[rowIndex][cellIndex] || '';
@@ -297,9 +301,57 @@ function App({ onLogout }) {
         updatedData[rowIndex][classificationColumnIndex] = classification;
       }
     }
+
+    // Auto-update Actual Rate and Variance when Timesheet/Hours column changes
+    if (isTimesheetColumn) {
+      // Find Hourly Rate, Actual Rate, Projected Rate, and Variance columns
+      const hourlyRateColIndex = headers.findIndex(h => {
+        const lower = h.toLowerCase();
+        return (lower.includes('hourly rate') && lower.includes('$')) || (lower.includes('monthly rate') && lower.includes('$'));
+      });
+      
+      const actualRateColIndex = headers.findIndex(h => {
+        const lower = h.toLowerCase();
+        return lower.includes('actual rate') || (lower.includes('actual') && lower.includes('$'));
+      });
+      
+      const projectedRateColIndex = headers.findIndex(h => {
+        const lower = h.toLowerCase();
+        return lower.includes('projected rate');
+      });
+      
+      const varianceColIndex = headers.findIndex(h => {
+        const lower = h.toLowerCase();
+        return lower.includes('variance');
+      });
+      
+      // Calculate and update Actual Rate if both columns exist
+      if (hourlyRateColIndex >= 0 && actualRateColIndex >= 0) {
+        const timesheetHours = parseFloat(newValue?.toString().replace(/[^0-9.-]/g, ''));
+        const hourlyRate = parseFloat(updatedData[rowIndex][hourlyRateColIndex]?.toString().replace(/[^0-9.-]/g, ''));
+        
+        if (!isNaN(timesheetHours) && !isNaN(hourlyRate) && timesheetHours > 0 && hourlyRate > 0) {
+          const actualRate = timesheetHours * hourlyRate;
+          updatedData[rowIndex][actualRateColIndex] = actualRate.toFixed(2);
+          
+          // Update Variance if Projected Rate column exists
+          if (varianceColIndex >= 0 && projectedRateColIndex >= 0) {
+            const projectedRate = parseFloat(updatedData[rowIndex][projectedRateColIndex]?.toString().replace(/[^0-9.-]/g, ''));
+            if (!isNaN(projectedRate)) {
+              const variance = projectedRate - actualRate;
+              updatedData[rowIndex][varianceColIndex] = variance.toFixed(2);
+            }
+          }
+        }
+      }
+    }
     
     setSheetData(updatedData);
-    setHasChanges(true);
+    
+    // Only activate Reconcile button if non-timesheet columns are changed
+    if (!isTimesheetColumn) {
+      setHasChanges(true);
+    }
   };
 
   const getFilteredData = () => {
@@ -417,9 +469,86 @@ function App({ onLogout }) {
   };
 
   const handleReconciliation = () => {
-    alert('🔄 Reconciliation Started!\n\nChecking data integrity and validating all entries...');
-    // Future: Add actual reconciliation logic here
-    console.log('Reconciliation triggered with', getFilteredData().length, 'rows');
+    // Find the timesheet/hours column index
+    const timesheetColIndex = headers.findIndex(h => {
+      const lower = h.toLowerCase();
+      return (lower.includes('timesheet') || lower.includes('hours')) && !lower.includes('hourly');
+    });
+    
+    // Find the hourly rate column index (with $ symbol)
+    const hourlyRateColIndex = headers.findIndex(h => {
+      const lower = h.toLowerCase();
+      return lower.includes('hourly rate') && lower.includes('$');
+    });
+    
+    // Find the actual rate column index
+    const actualRateColIndex = headers.findIndex(h => {
+      const lower = h.toLowerCase();
+      return lower.includes('actual rate') || (lower.includes('rate') && lower.includes('$'));
+    });
+    
+    // Find the projected rate column index
+    const projectedRateColIndex = headers.findIndex(h => {
+      const lower = h.toLowerCase();
+      return lower.includes('projected rate');
+    });
+    
+    // Find the variance column index
+    const varianceColIndex = headers.findIndex(h => {
+      const lower = h.toLowerCase();
+      return lower.includes('variance');
+    });
+    
+    // Validation: check if all required columns exist
+    if (timesheetColIndex === -1) {
+      alert('⚠️ Could not find "Timesheet" or "Hours" column');
+      return;
+    }
+    
+    if (hourlyRateColIndex === -1) {
+      alert('⚠️ Could not find "Hourly Rate ($)" column');
+      return;
+    }
+    
+    if (actualRateColIndex === -1) {
+      alert('⚠️ Could not find "Actual Rate" column');
+      return;
+    }
+
+    // Update actual rate and variance for each row
+    const updatedData = sheetData.map(row => {
+      const newRow = [...row];
+      const timesheetHours = parseFloat(newRow[timesheetColIndex]?.toString().replace(/[^0-9.-]/g, ''));
+      const hourlyRate = parseFloat(newRow[hourlyRateColIndex]?.toString().replace(/[^0-9.-]/g, ''));
+      
+      if (!isNaN(timesheetHours) && !isNaN(hourlyRate) && timesheetHours > 0 && hourlyRate > 0) {
+        const actualRate = timesheetHours * hourlyRate;
+        newRow[actualRateColIndex] = actualRate.toFixed(2);
+        
+        // Calculate and update variance if projected rate column exists
+        if (varianceColIndex >= 0 && projectedRateColIndex >= 0) {
+          const projectedRate = parseFloat(newRow[projectedRateColIndex]?.toString().replace(/[^0-9.-]/g, ''));
+          if (!isNaN(projectedRate)) {
+            const variance = projectedRate - actualRate;
+            newRow[varianceColIndex] = variance.toFixed(2);
+          }
+        }
+      }
+      
+      return newRow;
+    });
+
+    setSheetData(updatedData);
+    
+    alert(`✅ Reconciliation Completed!\n\nUpdated ${updatedData.length} rows with calculated actual rates and variance.\n\nFormulas:\n• Actual Rate: ${headers[timesheetColIndex]} × ${headers[hourlyRateColIndex]}\n• Variance: ${headers[projectedRateColIndex]} - ${headers[actualRateColIndex]}`);
+    console.log('Reconciliation Details:', {
+      timesheetColumn: headers[timesheetColIndex],
+      hourlyRateColumn: headers[hourlyRateColIndex],
+      actualRateColumn: headers[actualRateColIndex],
+      projectedRateColumn: headers[projectedRateColIndex],
+      varianceColumn: headers[varianceColIndex],
+      rowsUpdated: updatedData.length
+    });
     setHasChanges(false);
   };
 
@@ -430,17 +559,20 @@ function App({ onLogout }) {
         text: chatInput,
         sender: 'user'
       };
-      setChatMessages([...chatMessages, newMessage]);
+      setChatMessages(prev => [...prev, newMessage]);
       setChatInput('');
 
       // Simulate bot response
       setTimeout(() => {
         const botResponse = {
-          id: chatMessages.length + 2,
+          id: 0, // Will be set by the updater function
           text: 'Thanks for your message! How can I assist you with the burnsheet?',
           sender: 'bot'
         };
-        setChatMessages(prev => [...prev, botResponse]);
+        setChatMessages(prev => {
+          botResponse.id = Math.max(...prev.map(m => m.id), 0) + 1;
+          return [...prev, botResponse];
+        });
       }, 500);
     }
   };
@@ -527,7 +659,22 @@ function App({ onLogout }) {
       );
     }
 
-    // Hourly Rate ($) - display with $ symbol
+    // Timesheet/Hours - make editable with input field
+    if (headerLower.includes('timesheet') || (headerLower.includes('hours') && !headerLower.includes('hourly'))) {
+      return (
+        <td key={`cell-${rowIndex}-${cellIndex}`} className={`data-cell ${isEmpty ? 'missing-field' : ''} ${alignmentClass}`} data-column={headerName}>
+          <input
+            type="number"
+            step="0.01"
+            value={cell}
+            onChange={(e) => handleCellChange(rowIndex, cellIndex, e.target.value)}
+            className="timesheet-input"
+            placeholder="Enter hours"
+            title="Enter timesheet hours"
+          />
+        </td>
+      );
+    }
     if ((headerLower.includes('hourly rate') && headerLower.includes('$')) || (headerLower.includes('monthly rate') && headerLower.includes('$')) ) {
       return (
         <td key={`cell-${rowIndex}-${cellIndex}`} className={`data-cell ${isEmpty ? 'missing-field' : ''} ${alignmentClass}`} data-column={headerName}>
@@ -548,10 +695,8 @@ function App({ onLogout }) {
     <div className="excel-viewer">
       <div className="file-selection-section">
         <div className="header-top">
-          <img src="/Cognizant-logo.jpg" alt="Cognizant" className="header-logo header-logo-left" />
           <h1>Verizon Home & Marketing Burnsheet</h1>
           <div className="header-right">
-            <img src="/Screenshot 2026-03-23 135916.png" alt="Verizon" className="header-logo header-logo-right" />
             <div className="profile-menu" ref={profileRef}>
               <span className="welcome-text">Welcome, Admin 👋</span>
               <button className="profile-btn" onClick={() => setIsProfileOpen(!isProfileOpen)}>
@@ -576,14 +721,14 @@ function App({ onLogout }) {
       {headers.length > 0 && (
         <>
           <div className="country-tabs">
-            {['All', 'India', 'USA'].map(country => (
-              <button
+            {['India', 'USA'].map(country => (
+              <div
                 key={country}
                 className={`country-tab ${selectedCountry === country ? 'active' : ''}`}
                 onClick={() => setSelectedCountry(country)}
               >
                 {country}
-              </button>
+              </div>
             ))}
           </div>
           <div className="filter-export-bar">

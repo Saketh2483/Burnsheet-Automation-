@@ -7,10 +7,10 @@ from openpyxl import load_workbook
 import os
 
 # File paths
-INDIA_RATE_FILE = r"C:\Verizon Project\Verizon-Burnsheet\public\India-Rate.xlsx"
-SOW_HOURS_FILE = r"C:\Verizon Project\Verizon-Burnsheet\public\SOW_Hours_Rules.xlsx"
-US_RATES_FILE = r"C:\Verizon Project\Verizon-Burnsheet\public\Rates and Roles .xlsx"
-COMBINED_INPUT_FILE = r"C:\Verizon Project\Verizon-Burnsheet\public\Combined-Input.xlsx"
+INDIA_RATE_FILE = "public/India-Rate.xlsx"
+SOW_HOURS_FILE = "public/SOW_Hours_Rules.xlsx"
+US_RATES_FILE = "public/Rates and Roles .xlsx"
+COMBINED_INPUT_FILE = "public/Combined-Input.xlsx"
 
 
 # ===========================================
@@ -269,19 +269,43 @@ def update_combined_input(india_rate_card, hourly_rules, us_rate_card):
                 if location and location in ["ODC", "OnPrem"]:
                     # Fetch India Talent only Key from hourlyRules
                     india_talent_key = None
+                    india_hours_rule = None
                     for talent_type, hours_rule in hourly_rules.items():
                         talent_lower = talent_type.lower()
                         if "india" in talent_lower and "only" in talent_lower:
                             india_talent_key = talent_type
+                            india_hours_rule = hours_rule
                             break
                     
-                    if india_talent_key and "Hourly Rate($)" in headers and hourly_rules.get(india_talent_key):
+                    if india_talent_key and india_hours_rule and "Hourly Rate($)" in headers:
+                        # Store the hours rule value in Timesheet column
+                        if "Timesheet" in headers:
+                            ws.cell(row_idx, headers["Timesheet"]).value = india_hours_rule
+                        
+                        # Calculate projected rate
                         hourly_rate_usd_cell = ws.cell(row_idx, headers["Hourly Rate($)"])
                         if hourly_rate_usd_cell.value and isinstance(hourly_rate_usd_cell.value, (int, float)):
-                            projected_rate = hourly_rate_usd_cell.value * hourly_rules[india_talent_key]
+                            projected_rate = hourly_rate_usd_cell.value * india_hours_rule
                             
-                            # Fill rate columns
-                            rate_columns = ["Projected Rate($)", "Actual Rate", "Jan-26", "Feb-26", "Mar-26"]
+                            # Fill Projected Rate($)
+                            if "Projected Rate($)" in headers:
+                                ws.cell(row_idx, headers["Projected Rate($)"]).value = round(projected_rate, 2)
+                            
+                            # Fill Actual Rate by multiplying Timesheet value with Hourly Rate($)
+                            actual_rate = None
+                            if "Actual Rate" in headers and "Timesheet" in headers:
+                                timesheet_cell = ws.cell(row_idx, headers["Timesheet"])
+                                if timesheet_cell.value and isinstance(hourly_rate_usd_cell.value, (int, float)):
+                                    actual_rate = hourly_rate_usd_cell.value * timesheet_cell.value
+                                    ws.cell(row_idx, headers["Actual Rate"]).value = round(actual_rate, 2)
+                            
+                            # Fill Variance column (Projected Rate($) - Actual Rate)
+                            if "Variance" in headers and actual_rate is not None:
+                                variance = projected_rate - actual_rate
+                                ws.cell(row_idx, headers["Variance"]).value = round(variance, 2)
+                            
+                            # Fill monthly columns with projected rate
+                            rate_columns = ["Jan-26", "Feb-26", "Mar-26"]
                             for col_name in rate_columns:
                                 if col_name in headers:
                                     ws.cell(row_idx, headers[col_name]).value = round(projected_rate, 2)
@@ -299,20 +323,42 @@ def update_combined_input(india_rate_card, hourly_rules, us_rate_card):
                     if location in ["Onshore Verizon Location", "Onshore Supplier Location"]:
                         # Fetch Onshore Talent (USA/Canada) Key value from hourlyRules
                         onshore_key = None
+                        onshore_hours_rule = None
                         for talent_type, hours_rule in hourly_rules.items():
                             talent_lower = talent_type.lower()
                             if "onshore" in talent_lower and ("usa" in talent_lower or "canada" in talent_lower):
                                 onshore_key = talent_type
+                                onshore_hours_rule = hours_rule
                                 break
                         
-                        if onshore_key and "Hourly Rate($)" in headers and "Projected Rate($)" in headers and hourly_rules.get(onshore_key):
+                        if onshore_key and onshore_hours_rule and "Hourly Rate($)" in headers:
+                            # Store the hours rule value in Timesheet column
+                            if "Timesheet" in headers:
+                                ws.cell(row_idx, headers["Timesheet"]).value = onshore_hours_rule
+                            
                             hourly_rate_usd_cell = ws.cell(row_idx, headers["Hourly Rate($)"])
                             if hourly_rate_usd_cell.value and isinstance(hourly_rate_usd_cell.value, (int, float)):
-                                projected_rate = hourly_rate_usd_cell.value * hourly_rules[onshore_key]
-                                ws.cell(row_idx, headers["Projected Rate($)"]).value = round(projected_rate, 2)
+                                projected_rate = hourly_rate_usd_cell.value * onshore_hours_rule
                                 
-                                # Fill Actual Rate, Jan-26, Feb-26, Mar-26 with same projected rate value
-                                rate_columns = ["Actual Rate", "Jan-26", "Feb-26", "Mar-26"]
+                                # Fill Projected Rate($)
+                                if "Projected Rate($)" in headers:
+                                    ws.cell(row_idx, headers["Projected Rate($)"]).value = round(projected_rate, 2)
+                                
+                                # Fill Actual Rate by multiplying Timesheet value with Hourly Rate($)
+                                actual_rate = None
+                                if "Actual Rate" in headers and "Timesheet" in headers:
+                                    timesheet_cell = ws.cell(row_idx, headers["Timesheet"])
+                                    if timesheet_cell.value and isinstance(hourly_rate_usd_cell.value, (int, float)):
+                                        actual_rate = hourly_rate_usd_cell.value * timesheet_cell.value
+                                        ws.cell(row_idx, headers["Actual Rate"]).value = round(actual_rate, 2)
+                                
+                                # Fill Variance column (Projected Rate($) - Actual Rate)
+                                if "Variance" in headers and actual_rate is not None:
+                                    variance = projected_rate - actual_rate
+                                    ws.cell(row_idx, headers["Variance"]).value = round(variance, 2)
+                                
+                                # Fill Jan-26, Feb-26, Mar-26 with same projected rate value
+                                rate_columns = ["Jan-26", "Feb-26", "Mar-26"]
                                 for col_name in rate_columns:
                                     if col_name in headers:
                                         ws.cell(row_idx, headers[col_name]).value = round(projected_rate, 2)
@@ -320,20 +366,42 @@ def update_combined_input(india_rate_card, hourly_rules, us_rate_card):
                     elif location.lower() == "india":
                         # Fetch Offshore Talent billed under Onshore Key from hourlyRules
                         offshore_key = None
+                        offshore_hours_rule = None
                         for talent_type, hours_rule in hourly_rules.items():
                             talent_lower = talent_type.lower()
                             if "offshore" in talent_lower and "onshore" in talent_lower:
                                 offshore_key = talent_type
+                                offshore_hours_rule = hours_rule
                                 break
                         
-                        if offshore_key and "Hourly Rate($)" in headers and "Projected Rate($)" in headers and hourly_rules.get(offshore_key):
+                        if offshore_key and offshore_hours_rule and "Hourly Rate($)" in headers:
+                            # Store the hours rule value in Timesheet column
+                            if "Timesheet" in headers:
+                                ws.cell(row_idx, headers["Timesheet"]).value = offshore_hours_rule
+                            
                             hourly_rate_usd_cell = ws.cell(row_idx, headers["Hourly Rate($)"])
                             if hourly_rate_usd_cell.value and isinstance(hourly_rate_usd_cell.value, (int, float)):
-                                projected_rate = hourly_rate_usd_cell.value * hourly_rules[offshore_key]
-                                ws.cell(row_idx, headers["Projected Rate($)"]).value = round(projected_rate, 2)
+                                projected_rate = hourly_rate_usd_cell.value * offshore_hours_rule
                                 
-                                # Fill Actual Rate, Jan-26, Feb-26, Mar-26 with same projected rate value
-                                rate_columns = ["Actual Rate", "Jan-26", "Feb-26", "Mar-26"]
+                                # Fill Projected Rate($)
+                                if "Projected Rate($)" in headers:
+                                    ws.cell(row_idx, headers["Projected Rate($)"]).value = round(projected_rate, 2)
+                                
+                                # Fill Actual Rate by multiplying Timesheet value with Hourly Rate($)
+                                actual_rate = None
+                                if "Actual Rate" in headers and "Timesheet" in headers:
+                                    timesheet_cell = ws.cell(row_idx, headers["Timesheet"])
+                                    if timesheet_cell.value and isinstance(hourly_rate_usd_cell.value, (int, float)):
+                                        actual_rate = hourly_rate_usd_cell.value * timesheet_cell.value
+                                        ws.cell(row_idx, headers["Actual Rate"]).value = round(actual_rate, 2)
+                                
+                                # Fill Variance column (Projected Rate($) - Actual Rate)
+                                if "Variance" in headers and actual_rate is not None:
+                                    variance = projected_rate - actual_rate
+                                    ws.cell(row_idx, headers["Variance"]).value = round(variance, 2)
+                                
+                                # Fill Jan-26, Feb-26, Mar-26 with same projected rate value
+                                rate_columns = ["Jan-26", "Feb-26", "Mar-26"]
                                 for col_name in rate_columns:
                                     if col_name in headers:
                                         ws.cell(row_idx, headers[col_name]).value = round(projected_rate, 2)

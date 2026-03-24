@@ -3,14 +3,15 @@ import openpyxl
 from openpyxl.utils import get_column_letter
 import os
 from pathlib import Path
+from datetime import datetime
 
 def combine_excel_sheets(input_file, output_file):
     """
     Combines multiple Excel sheets into a master data file with specified logic
     """
     
-    # Load the input workbook
-    wb_input = openpyxl.load_workbook(input_file)
+    # Load the input workbook - use data_only=True to get calculated values instead of formulas
+    wb_input = openpyxl.load_workbook(input_file, data_only=True)
     
     # Get all sheet names, skip the first one (legend) and hidden sheets
     sheet_names = []
@@ -30,22 +31,23 @@ def combine_excel_sheets(input_file, output_file):
     wb_output = openpyxl.Workbook()
     ws_output = wb_output.active
     ws_output.title = "Combined Data"
-    header_written = False
     
-    # Define headers
+    # Define headers in the correct order as per specification
     headers = [
         "EMPId", "Name", "Location", "Country", "ACT/PCT", "Skill Set",
         "Verizon Level Mapping", "Classification", "Key", "Cognizant Designation",
-        "ESA ID", "ESA Description", "Service Line", "Hourly Rate(Rs)",
-        "Hourly Rate($)", "Projected Rate($)", "Actual Rate", "Variance",
+        "ESA ID", "ESA Description", "Service Line", "Timesheet",
+        "Hourly Rate(Rs)", "Hourly Rate($)", "Projected Rate($)", "Actual Rate", "Variance",
         "Jan-26", "Feb-26", "Mar-26", "Verizon TQ ID", "Verizon TQ Description", "POC"
     ]
     
     # Write headers only once
-    if not header_written:
-        for col_idx, header in enumerate(headers, 1):
-            ws_output.cell(row=1, column=col_idx, value=header)
-        header_written = True
+    for col_idx, header in enumerate(headers, 1):
+        ws_output.cell(row=1, column=col_idx, value=header)
+    
+    # Header row is always row 8 as per requirement
+    header_row_number = 8
+    print(f"Header row number: {header_row_number}")
     
     # Process each sheet
     current_row = 2
@@ -79,15 +81,19 @@ def combine_excel_sheets(input_file, output_file):
             if cell_value:
                 verizon_tq_description += str(cell_value)
         
-        # Read header row from row 8
+        # Read header row from the consistently determined header_row_number
         header_row_mapping = {}
         for col in range(1, ws_input.max_column + 1):
-            header_value = ws_input.cell(row=8, column=col).value
+            header_value = ws_input.cell(row=header_row_number, column=col).value
             if header_value:
-                header_row_mapping[col] = str(header_value).strip()
+                # Keep datetime objects as-is, convert others to string
+                if isinstance(header_value, datetime):
+                    header_row_mapping[col] = header_value
+                else:
+                    header_row_mapping[col] = str(header_value).strip()
         
-        # Process data rows (starting from row 9)
-        for row in range(9, ws_input.max_row + 1):
+        # Process data rows (starting from the row after the header row)
+        for row in range(header_row_number + 1, ws_input.max_row + 1):
             # Check if Name column has value (skip if empty)
             name_value = None
             name_col_idx = None
@@ -100,22 +106,11 @@ def combine_excel_sheets(input_file, output_file):
             if not name_value:
                 continue
             
-            # Build row data from input, reading only up to and including "Hourly Rate($)"
+            # Build row data from input, reading all columns
             row_data = {}
-            last_col_to_read = None
             
             for col, header in header_row_mapping.items():
                 if header:
-                    # Find the last column to read (Hourly Rate($))
-                    if "Hourly Rate($)" in header:
-                        last_col_to_read = col
-            
-            for col, header in header_row_mapping.items():
-                if header:
-                    # Stop after Hourly Rate($) column
-                    if last_col_to_read and col > last_col_to_read:
-                        break
-                    
                     cell_value = ws_input.cell(row=row, column=col).value
                     row_data[header] = cell_value
             
@@ -149,13 +144,19 @@ def combine_excel_sheets(input_file, output_file):
                     output_row[header_idx] = verizon_tq_description
                 elif header == "POC":
                     output_row[header_idx] = x
+                elif header in ["Jan-26", "Feb-26", "Mar-26"]:
+                    # Fill month columns with Projected Rate($) value
+                    projected_rate = row_data.get("Projected Rate($)", None)
+                    if projected_rate is not None:
+                        output_row[header_idx] = projected_rate
             
-            # Handle Classification based on country
+            # Handle Classification and Key based on country
             classification = None
             verizon_level = row_data.get("Verizon Level Mapping", "")
             location = row_data.get("Location", "")
             
             if country == "India":
+                # Classification: Read directly from Classification column
                 classification = row_data.get("Classification", "")
                 output_row[headers.index("Classification")] = classification
                 # Key = Classification + Location + Verizon Level Mapping (no delimiters)
@@ -163,13 +164,15 @@ def combine_excel_sheets(input_file, output_file):
                 key = "".join(key_parts)
                 output_row[headers.index("Key")] = key
             else:  # USA
-                # Classification = Verizon Level Mapping with characters before '-' removed and "Skills" removed
+                # Classification = Verizon Level Mapping with characters before and including '-' removed, then remove "Skills"
                 if verizon_level:
                     verizon_level_str = str(verizon_level)
                     if '-' in verizon_level_str:
+                        # Remove all characters up to and including '-'
                         classification = verizon_level_str.split('-', 1)[1]
                     else:
                         classification = verizon_level_str
+                    # Remove the word "Skills" from the classification
                     classification = classification.replace("Skills", "").strip()
                 
                 output_row[headers.index("Classification")] = classification

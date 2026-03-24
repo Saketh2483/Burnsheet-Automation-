@@ -103,8 +103,8 @@ function calculateAverages(jsonData) {
     
     // Match "Monthly Rate ($)" column - try various formats
     if (
-      lowerKey.includes('monthly') && lowerKey.includes('rate') ||
-      normalizedKey.includes('monthly') && normalizedKey.includes('rate')
+      (lowerKey.includes('monthly') && lowerKey.includes('rate')) ||
+      (normalizedKey.includes('monthly') && normalizedKey.includes('rate'))
     ) {
       monthlyRateKey = key
       console.log('  ✓ Found Monthly Rate column:', key)
@@ -112,8 +112,8 @@ function calculateAverages(jsonData) {
     
     // Match "Actual Rate($)" column - try various formats
     if (
-      lowerKey.includes('actual') && lowerKey.includes('rate') ||
-      normalizedKey.includes('actual') && normalizedKey.includes('rate')
+      (lowerKey.includes('actual') && lowerKey.includes('rate')) ||
+      (normalizedKey.includes('actual') && normalizedKey.includes('rate'))
     ) {
       actualRateKey = key
       console.log('  ✓ Found Actual Rate column:', key)

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import PropTypes from 'prop-types';
 import './Login.css';
 
 const CREDENTIALS = { username: 'admin', password: 'admin' };
@@ -17,14 +18,19 @@ function Login({ onLogin }) {
     }
   };
 
+  const handleLinkClick = (e) => {
+    e.preventDefault();
+  };
+
   return (
     <div className="login-container">
       <div className="login-card">
         <h2>Verizon Burnsheet</h2>
         <form onSubmit={handleSubmit}>
           <div className="login-field">
-            <label>Username</label>
+            <label htmlFor="username">Username</label>
             <input
+              id="username"
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -33,8 +39,9 @@ function Login({ onLogin }) {
             />
           </div>
           <div className="login-field">
-            <label>Password</label>
+            <label htmlFor="password">Password</label>
             <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -45,13 +52,17 @@ function Login({ onLogin }) {
           <button type="submit" className="login-btn">Login</button>
         </form>
         <div className="login-links">
-          <a href="#" className="forgot-password-link">Forgot Password?</a>
+          <button type="button" onClick={handleLinkClick} className="forgot-password-link">Forgot Password?</button>
           <span className="signup-separator">|</span>
-          <a href="#" className="signup-link">Sign Up</a>
+          <button type="button" onClick={handleLinkClick} className="signup-link">Sign Up</button>
         </div>
       </div>
     </div>
   );
 }
+
+Login.propTypes = {
+  onLogin: PropTypes.func.isRequired,
+};
 
 export default Login;
