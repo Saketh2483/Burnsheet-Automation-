@@ -40,21 +40,21 @@ function App({ onLogout }) {
   const [changedRowIndices, setChangedRowIndices] = useState(new Set());
   const [isChatOpen, setIsChatOpen] = useState(false);
   const initialChatMessages = [
-    { id: 1, text: 'Last updated dollar value is 83.49. Needs to update please enter the value.', sender: 'bot' }
+    { id: 1, text: 'Last updated dollar value is 86. Needs to update please enter the value.', sender: 'bot' }
   ];
   const [chatMessages, setChatMessages] = useState(initialChatMessages);
   const [chatInput, setChatInput] = useState('');
-  const [dollarValue, setDollarValue] = useState(initialChatMessages[0]?.text.match(/\d+\.\d+/)?.[0] || '');
+  const [dollarValue, setDollarValue] = useState(initialChatMessages[0]?.text.match(/\d+(?:\.\d+)?/)?.[0] || '');
 
   const [selectedCountry, setSelectedCountry] = useState('India');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
   const chartBarRef = useRef(null);
   const chartPieRef = useRef(null);
-  const [showDashboard, setShowDashboard] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(true);
   const [dashboardData, setDashboardData] = useState({ overall: null, individual: null, resourceFlags: null, loading: false, error: null });
 
-  const handleOpenDashboard = async () => {
+  const handleOpenDashboard = useCallback(async () => {
     setShowDashboard(true);
     if (dashboardData.overall) return;
     setDashboardData(prev => ({ ...prev, loading: true, error: null }));
@@ -68,7 +68,7 @@ function App({ onLogout }) {
     } catch (err) {
       setDashboardData(prev => ({ ...prev, loading: false, error: err.message }));
     }
-  };
+  }, [dashboardData.overall]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -274,7 +274,9 @@ function App({ onLogout }) {
 
   useEffect(() => {
     loadExcelFile();
-  }, [loadExcelFile]);
+    // Load dashboard data on initial mount
+    handleOpenDashboard();
+  }, [loadExcelFile, handleOpenDashboard]);
 
   const isValidEMPID = (value) => /^\d+$/.test(value);
 
@@ -815,27 +817,29 @@ function App({ onLogout }) {
                   )}
                 </div>
 
-                {/* Dollar Value Editable Text Box - moved between Filter by Month and Reconcile button */}
-                <div className="dollar-value-box">
-                  <label htmlFor="dollar-value-input">$ Value:</label>
-                  <input
-                    id="dollar-value-input"
-                    type="number"
-                    step="0.01"
-                    value={dollarValue}
-                    onChange={e => {
-                      const newValue = e.target.value;
-                      setDollarValue(newValue);
-                      setChatMessages(prev => {
-                        const updated = [...prev];
-                        if (updated[0]) {
-                          updated[0].text = `Last updated dollar value is ${newValue}. Needs to update please enter the value.`;
-                        }
-                        return updated;
-                      });
-                    }}
-                  />
-                </div>
+                {/* Dollar Value Editable Text Box - only show for India */}
+                {selectedCountry === 'India' && (
+                  <div className="dollar-value-box">
+                    <label htmlFor="dollar-value-input">$ Value:</label>
+                    <input
+                      id="dollar-value-input"
+                      type="number"
+                      step="0.01"
+                      value={dollarValue}
+                      onChange={e => {
+                        const newValue = e.target.value;
+                        setDollarValue(newValue);
+                        setChatMessages(prev => {
+                          const updated = [...prev];
+                          if (updated[0]) {
+                            updated[0].text = `Last updated dollar value is ${newValue}. Needs to update please enter the value.`;
+                          }
+                          return updated;
+                        });
+                      }}
+                    />
+                  </div>
+                )}
 
                 <div className="export-section">
                   {!showDashboard && (
@@ -864,7 +868,7 @@ function App({ onLogout }) {
             <div style={{ background: '#f0f2f5', minHeight: '70vh', overflowY: 'auto' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 28px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', marginBottom: '20px' }}>
                 <h2 style={{ color: 'white', margin: 0 }}>📈 Rate Analysis Dashboard</h2>
-                <button onClick={() => setShowDashboard(false)} className="export-btn burnsheet-btn" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: 14, borderRadius: 8, padding: '8px 16px', cursor: 'pointer', marginRight: '10px' }} title="Back to Burnsheet">📋 Burnsheet</button>
+                <button onClick={() => setShowDashboard(false)} className="export-btn resource-burn-btn" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: 14, borderRadius: 8, padding: '8px 16px', cursor: 'pointer', marginRight: '10px' }} title="Back to Resource Burn">� Resource Burn</button>
               </div>
               {dashboardData.loading && <div style={{ textAlign: 'center', padding: 60, fontSize: 20 }}>⏳ Loading Dashboard...</div>}
               {dashboardData.error && <div style={{ textAlign: 'center', padding: 40, color: 'red' }}>❌ {dashboardData.error}</div>}
