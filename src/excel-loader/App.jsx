@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import CombinedDashboard from './components/CombinedDashboard';
-import { loadAndProcessExcelData } from './utils/excelLoader';
-import { loadIndividualBurnData } from './utils/individualBurnLoader';
-import { loadResourceFlagsData } from './utils/resourceFlagsLoader';
+import CombinedDashboard from '../dashboard/components/CombinedDashboard';
+import { loadAndProcessExcelData } from '../dashboard/utils/excelLoader';
+import { loadIndividualBurnData } from '../dashboard/utils/individualBurnLoader';
+import { loadResourceFlagsData } from '../dashboard/utils/resourceFlagsLoader';
 import './App.css';
 
 const PRIORITY_COLUMNS = [

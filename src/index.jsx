@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App';
-import Login from './Login';
+import App from './excel-loader/App';
+import Login from './excel-loader/Login';
 
 function Root() {
   const [loggedIn, setLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
