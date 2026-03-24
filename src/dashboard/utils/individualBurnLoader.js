@@ -3,7 +3,7 @@
  * Processes per-employee Monthly Rate ($) vs Actual Rate($) comparison
  */
 
-const EXCEL_FILE_PATH = '/Combined-H&M 1 1.xlsx'
+const EXCEL_FILE_PATH = '/Combined-Main.xlsx'
 
 /**
  * Load Excel file from public directory
@@ -74,6 +74,7 @@ function processIndividualData(jsonData) {
   let empIdKey = null
   let monthlyRateKey = null
   let actualRateKey = null
+  let projectedRateKey = null
 
   columnKeys.forEach(key => {
     const lowerKey = key.toLowerCase().trim()
@@ -93,14 +94,19 @@ function processIndividualData(jsonData) {
     if (lowerKey.includes('actual') && lowerKey.includes('rate')) {
       actualRateKey = key
     }
+
+    // Match Projected Rate column
+    if (lowerKey.includes('projected') && lowerKey.includes('rate')) {
+      projectedRateKey = key
+    }
   })
 
   if (!empIdKey) {
     throw new Error(`Column "EmpID" not found. Available columns: ${columnKeys.join(', ')}`)
   }
   
-  if (!monthlyRateKey) {
-    throw new Error(`Column "Monthly Rate ($)" not found. Available columns: ${columnKeys.join(', ')}`)
+  if (!monthlyRateKey && !projectedRateKey) {
+    throw new Error(`Column "Monthly Rate ($)" or "Projected Rate ($)" not found. Available columns: ${columnKeys.join(', ')}`)
   }
   
   if (!actualRateKey) {
@@ -128,9 +134,10 @@ function processIndividualData(jsonData) {
         }
       }
 
-      // Process Monthly Rate
-      if (monthlyRateKey && row[monthlyRateKey] !== undefined && row[monthlyRateKey] !== null && row[monthlyRateKey] !== '') {
-        let valueStr = String(row[monthlyRateKey]).replace(/[$,\s]/g, '').trim()
+      // Process Monthly Rate or Projected Rate
+      const rateKey = projectedRateKey || monthlyRateKey
+      if (rateKey && row[rateKey] !== undefined && row[rateKey] !== null && row[rateKey] !== '') {
+        let valueStr = String(row[rateKey]).replace(/[$,\s]/g, '').trim()
         const value = parseFloat(valueStr)
         if (!isNaN(value) && isFinite(value)) {
           employeeMap[empId].monthlyRateSum += value

@@ -9,10 +9,21 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData }) {
   const [activeTab, setActiveTab] = useState('combined')
   const [missingClassificationsData, setMissingClassificationsData] = useState(null)
 
+  // Log incoming data
+  console.log('🔄 CombinedDashboard received props:', {
+    overallDataKeys: overallData ? Object.keys(overallData) : 'undefined',
+    overallDataHasRows: overallData?.rows ? true : false,
+    overallDataRowsLength: overallData?.rows?.length || 0
+  });
+
   useEffect(() => {
     const loadMissingClassifications = async () => {
       try {
-        const response = await fetch('/Combined-H&M 1 1.xlsx')
+        const response = await fetch('/Combined-Main.xlsx')
+        if (!response.ok) {
+          throw new Error(`Failed to load Excel file: ${response.statusText}`)
+        }
+
         const blob = await response.blob()
         const arrayBuffer = await blob.arrayBuffer()
 
@@ -26,36 +37,72 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData }) {
 
         if (!jsonData || jsonData.length === 0) {
           console.error('No data found in Excel file')
+          setMissingClassificationsData({
+            missingRows: [],
+            totalRows: 0,
+            missingCount: 0,
+            classificationKey: null
+          })
           return
         }
 
-        // Find Classification column - search for column with 'classification' in name
+        // Get all column keys
         const columnKeys = Object.keys(jsonData[0])
+        console.log('📋 All columns in Excel:', columnKeys)
+        console.log('📊 Column count:', columnKeys.length)
+        
+        // If more than 7 columns, column H is likely at index 7
         let classificationKey = null
-
-        // Search for classification column (case-insensitive)
+        
+        // Strategy 1: Look for explicit "Classification" column name
         for (const key of columnKeys) {
           const lowerKey = key.toLowerCase().trim()
           if (lowerKey.includes('classification')) {
             classificationKey = key
+            console.log('✅ Found Classification column by name:', classificationKey)
             break
           }
         }
 
+        // Strategy 2: If column H exists (usually index 7), check if it might be Classification
+        if (!classificationKey && columnKeys.length > 7) {
+          classificationKey = columnKeys[7]
+          console.log('✅ Using column H (index 7) as Classification:', classificationKey)
+        }
+
+        // Strategy 3: Check for "Key" column as potential classification
         if (!classificationKey) {
-          console.error('Classification column not found. Available columns:', columnKeys)
-          console.log('Please ensure your Excel file has a "Classification" column')
+          for (const key of columnKeys) {
+            const lowerKey = key.toLowerCase().trim()
+            if (lowerKey === 'key') {
+              classificationKey = key
+              console.log('✅ Using "Key" column as Classification:', classificationKey)
+              break
+            }
+          }
+        }
+
+        if (!classificationKey) {
+          console.error('❌ Classification column not found. Available columns:', columnKeys.join(', '))
+          setMissingClassificationsData({
+            missingRows: [],
+            totalRows: jsonData.length,
+            missingCount: 0,
+            classificationKey: null,
+            message: `Classification column not found. Available columns: ${columnKeys.join(', ')}`
+          })
           return
         }
 
-        console.log('✅ Found Classification column:', classificationKey)
+        console.log('✅ Using column for Classification:', classificationKey)
 
         // Find missing classifications
         const missingRows = []
         jsonData.forEach((row, rowIndex) => {
           const classification = row[classificationKey]
           // Check if classification is empty, null, undefined, or whitespace
-          if (!classification || 
+          if (classification === null || 
+              classification === undefined ||
               String(classification).trim() === '' || 
               String(classification).toLowerCase() === 'undefined' || 
               String(classification).toLowerCase() === 'null') {
@@ -67,7 +114,7 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData }) {
           }
         })
 
-        console.log(`Found ${missingRows.length} rows with missing classifications out of ${jsonData.length} total rows`)
+        console.log(`✅ Found ${missingRows.length} rows with missing classifications out of ${jsonData.length} total rows`)
 
         setMissingClassificationsData({
           missingRows,
@@ -80,7 +127,14 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData }) {
           XLSX
         })
       } catch (error) {
-        console.error('Error loading missing classifications:', error)
+        console.error('❌ Error loading missing classifications:', error.message)
+        setMissingClassificationsData({
+          missingRows: [],
+          totalRows: 0,
+          missingCount: 0,
+          classificationKey: null,
+          message: `Error: ${error.message}`
+        })
       }
     }
 
@@ -101,6 +155,12 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData }) {
           onClick={() => setActiveTab('monthly')}
         >
           📈 Monthly Burn
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'missing' ? 'active' : ''}`}
+          onClick={() => setActiveTab('missing')}
+        >
+          ⚠️ Missing Classifications
         </button>
         <button 
           className={`tab-btn ${activeTab === 'resources' ? 'active' : ''}`}
@@ -129,6 +189,14 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData }) {
       {activeTab === 'monthly' && (
         <div className="full-dashboard">
           <MonthlyBurnComparison overallData={overallData} individualData={individualData} />
+        </div>
+      )}
+
+      {activeTab === 'missing' && (
+        <div className="full-dashboard">
+          {missingClassificationsData && (
+            <MissingClassificationsAlert data={missingClassificationsData} />
+          )}
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import {
   BarChart,
   Bar,
@@ -25,13 +25,28 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  // Log incoming data
+  console.log('📋 MonthlyBurnComparison received overallData:', {
+    hasOverallData: !!overallData,
+    overallDataKeys: overallData ? Object.keys(overallData) : 'undefined',
+    hasRows: overallData?.rows ? true : false,
+    rowsLength: overallData?.rows?.length || 0
+  });
+
+  const targetColumns = ['Tower', 'Location', 'Country', 'ACT/PCT', 'Verizon Level Mapping', 'Classification', 'Cognizant Designation', 'ESA Id', 'Service Line']
+
   // Load Excel data when custom view is selected
-  const loadExcelData = useCallback(async () => {
-    const targetColumns = ['Tower', 'Location', 'ACT/PCT', 'Verizon Level Mapping', 'Classification', 'Cognizant Designation', 'ESA Id', 'Service Line']
-    
+  useEffect(() => {
+    if (currentView === 'custom' && !excelData) {
+      loadExcelData()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentView])
+
+  const loadExcelData = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/Combined-H&M 1 1.xlsx')
+      const response = await fetch('/Combined-Main.xlsx')
       const blob = await response.blob()
       const arrayBuffer = await blob.arrayBuffer()
 
@@ -64,13 +79,7 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
       setError('Failed to load data from Excel')
       setLoading(false)
     }
-  }, [])
-
-  useEffect(() => {
-    if (currentView === 'custom' && !excelData) {
-      loadExcelData()
-    }
-  }, [currentView, excelData, loadExcelData])
+  }
 
   const handleParameterChange = (e) => {
     const parameter = e.target.value
@@ -126,34 +135,45 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
 
     if (filteredRows.length === 0) return null
 
+    let projectedRateKey = null
     let monthlyRateKey = null
     let actualRateKey = null
 
     columnKeys.forEach(key => {
       const lowerKey = key.toLowerCase().trim()
       
+      // Match Projected Rate column
+      if (lowerKey.includes('projected') && lowerKey.includes('rate')) {
+        projectedRateKey = key
+      }
+      
+      // Match Monthly Rate column (fallback if no Projected Rate)
       if (lowerKey.includes('monthly') && lowerKey.includes('rate')) {
         monthlyRateKey = key
       }
       
+      // Match Actual Rate column
       if (lowerKey.includes('actual') && lowerKey.includes('rate')) {
         actualRateKey = key
       }
     })
 
-    let monthlyRateTotal = 0
-    let monthlyRateCount = 0
+    // Use projected rate if available, otherwise use monthly rate
+    const rateKey = projectedRateKey || monthlyRateKey
+
+    let projectedRateTotal = 0
+    let projectedRateCount = 0
     let actualRateTotal = 0
     let actualRateCount = 0
 
     filteredRows.forEach(row => {
-      if (monthlyRateKey && row[monthlyRateKey] !== undefined && row[monthlyRateKey] !== null && row[monthlyRateKey] !== '') {
-        let valueStr = String(row[monthlyRateKey]).replace(/[$,\s]/g, '').trim()
-        const monthlyRate = parseFloat(valueStr)
+      if (rateKey && row[rateKey] !== undefined && row[rateKey] !== null && row[rateKey] !== '') {
+        let valueStr = String(row[rateKey]).replace(/[$,\s]/g, '').trim()
+        const rate = parseFloat(valueStr)
         
-        if (!isNaN(monthlyRate) && isFinite(monthlyRate)) {
-          monthlyRateTotal += monthlyRate
-          monthlyRateCount++
+        if (!isNaN(rate) && isFinite(rate)) {
+          projectedRateTotal += rate
+          projectedRateCount++
         }
       }
 
@@ -169,9 +189,9 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
     })
 
     return {
-      monthlyRateAverage: monthlyRateCount > 0 ? monthlyRateTotal / monthlyRateCount : 0,
-      monthlyRateTotal: monthlyRateTotal,
-      monthlyRateCount: monthlyRateCount,
+      monthlyRateAverage: projectedRateCount > 0 ? projectedRateTotal / projectedRateCount : 0,
+      monthlyRateTotal: projectedRateTotal,
+      monthlyRateCount: projectedRateCount,
       actualRateAverage: actualRateCount > 0 ? actualRateTotal / actualRateCount : 0,
       actualRateTotal: actualRateTotal,
       actualRateCount: actualRateCount,
@@ -257,7 +277,7 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
                 <div className="filtered-results">
                   <div className="results-summary">
                     <div className="result-box">
-                      <p className="result-label">Monthly Rate</p>
+                      <p className="result-label">Projected Rate</p>
                       <p className="result-value">${filteredData.monthlyRateAverage.toFixed(2)}</p>
                       <p className="result-label">Average</p>
                       <p className="result-detail">Total: ${filteredData.monthlyRateTotal.toFixed(2)}</p>
@@ -278,7 +298,7 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
                       <ResponsiveContainer width="100%" height={400}>
                         <BarChart 
                           data={[
-                            { name: 'Monthly Rate', value: parseFloat(filteredData.monthlyRateAverage.toFixed(2)) },
+                            { name: 'Projected Rate', value: parseFloat(filteredData.monthlyRateAverage.toFixed(2)) },
                             { name: 'Actual Rate', value: parseFloat(filteredData.actualRateAverage.toFixed(2)) }
                           ]}
                           margin={{ top: 20, right: 30, left: 0, bottom: 60 }}

@@ -50,12 +50,10 @@ function Chatbot() {
     
     if (!inputValue.trim()) return
 
-    const currentInput = inputValue
-    
     // Add user message
     const userMessage = {
       id: messages.length + 1,
-      text: currentInput,
+      text: inputValue,
       sender: 'user',
       timestamp: new Date(),
     }
@@ -66,15 +64,13 @@ function Chatbot() {
 
     // Simulate bot response delay
     setTimeout(() => {
-      setMessages(prev => {
-        const botMessage = {
-          id: prev.length + 1,
-          text: generateBotResponse(currentInput),
-          sender: 'bot',
-          timestamp: new Date(),
-        }
-        return [...prev, botMessage]
-      })
+      const botMessage = {
+        id: messages.length + 2,
+        text: generateBotResponse(inputValue),
+        sender: 'bot',
+        timestamp: new Date(),
+      }
+      setMessages(prev => [...prev, botMessage])
       setIsLoading(false)
 
       // Check if user is near bottom, if not show indicator

@@ -1,10 +1,10 @@
 /**
  * Excel File Loader and Data Processor
- * Connects to the Excel file: Combined-H&M 1 1.xlsx
+ * Connects to the Excel file: Combined-Main.xlsx
  * Processes Monthly Rate ($) and Actual Rate($) columns
  */
 
-const EXCEL_FILE_PATH = '/Combined-H&M 1 1.xlsx'
+const EXCEL_FILE_PATH = '/Combined-Main.xlsx'
 
 /**
  * Load Excel file from public directory
@@ -120,12 +120,44 @@ function calculateAverages(jsonData) {
     }
   })
 
-  if (!monthlyRateKey) {
-    throw new Error(`Column "Monthly Rate ($)" not found. Available columns: ${columnKeys.join(', ')}`)
+  // Prefer 'Projected Rate($)' if available, otherwise try to match 'Monthly Rate'
+  if (columnKeys.includes('Projected Rate($)')) {
+    monthlyRateKey = 'Projected Rate($)'
+    console.log('  ✓ Found Projected Rate($) column, using it for Monthly Rate')
+  } else {
+    // Fallback: try to match any column with monthly+rate
+    columnKeys.forEach(key => {
+      const lowerKey = key.toLowerCase().trim()
+      const normalizedKey = lowerKey.replace(/[^a-z0-9]/g, '')
+      if (
+        (lowerKey.includes('monthly') && lowerKey.includes('rate')) ||
+        (normalizedKey.includes('monthly') && normalizedKey.includes('rate'))
+      ) {
+        monthlyRateKey = key
+        console.log('  ✓ Found Monthly Rate column:', key)
+      }
+    })
   }
-  
+
+  // For actual rate, try to match 'Actual Rate' or 'Actual Rate($)' or 'Actual'
   if (!actualRateKey) {
-    throw new Error(`Column "Actual Rate($)" not found. Available columns: ${columnKeys.join(', ')}`)
+    if (columnKeys.includes('Actual Rate')) {
+      actualRateKey = 'Actual Rate'
+      console.log('  ✓ Found Actual Rate column')
+    } else if (columnKeys.includes('Actual Rate($)')) {
+      actualRateKey = 'Actual Rate($)'
+      console.log('  ✓ Found Actual Rate($) column')
+    } else if (columnKeys.includes('Actual')) {
+      actualRateKey = 'Actual'
+      console.log('  ✓ Found Actual column')
+    }
+  }
+
+  if (!monthlyRateKey) {
+    throw new Error(`Column "Projected Rate($)" or "Monthly Rate ($)" not found. Available columns: ${columnKeys.join(', ')}`)
+  }
+  if (!actualRateKey) {
+    throw new Error(`Column "Actual Rate($)" or "Actual Rate" or "Actual" not found. Available columns: ${columnKeys.join(', ')}`)
   }
 
   console.log('✓ Column mapping:')
@@ -186,6 +218,7 @@ function calculateAverages(jsonData) {
     actualRateTotal: actualRateSum,
     monthlyRateCount,
     actualRateCount,
+    rows: jsonData,
   }
 
   console.log('✓ Averages calculated:')
@@ -193,6 +226,7 @@ function calculateAverages(jsonData) {
   console.log('  Actual Rate Average:', result.actualRateAverage.toFixed(2))
   console.log('  Monthly Rate Total:', result.monthlyRateTotal.toFixed(2))
   console.log('  Actual Rate Total:', result.actualRateTotal.toFixed(2))
+  console.log('✅ CRITICAL: Result object now includes rows:', result.rows.length, 'records')
 
   return result
 }

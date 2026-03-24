@@ -6,7 +6,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   Cell,
 } from 'recharts'
@@ -69,7 +68,7 @@ function IndividualBurn({ data }) {
   // Prepare data for Recharts
   const chartData = [
     {
-      name: 'Monthly Rate',
+      name: 'Projected Rate',
       value: parseFloat(displayEmployee.monthlyRateAverage.toFixed(2)),
     },
     {
@@ -130,7 +129,7 @@ function IndividualBurn({ data }) {
 
       <div className="stats-panel">
         <div className="stat-box">
-          <h3>Monthly Rate</h3>
+          <h3>Projected Rate</h3>
           <p className="stat-value">${displayEmployee.monthlyRateAverage.toFixed(2)}</p>
           <p className="stat-label">Average</p>
           <p className="stat-detail">Total: ${displayEmployee.monthlyRateTotal.toFixed(2)}</p>
@@ -164,10 +163,7 @@ function IndividualBurn({ data }) {
                 label={{ value: 'Amount ($)', angle: -90, position: 'insideLeft', fill: '#2c3e50' }}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend 
-                wrapperStyle={{ paddingTop: '20px' }}
-                iconType="square"
-              />
+              
               <Bar dataKey="value" name="Average Rate" fill="#667eea" radius={[8, 8, 0, 0]}>
                 {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={colors[index]} />
@@ -181,7 +177,7 @@ function IndividualBurn({ data }) {
       <div className="legend">
         <div className="legend-item">
           <div className="legend-color monthly-bar"></div>
-          <span>Monthly Rate Average</span>
+          <span>Projected Rate Average</span>
         </div>
         <div className="legend-item">
           <div className="legend-color actual-bar"></div>

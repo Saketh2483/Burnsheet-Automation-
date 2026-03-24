@@ -1,22 +1,24 @@
 .missing-classifications-alert {
-  padding: 25px;
-  background: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.98);
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  height: 100%;
-  max-height: 100%;
+  gap: 15px;
+  min-height: 400px;
+  width: 100%;
+  flex: 1;
 }
 
 .alert-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 15px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #667eea;
+  flex-shrink: 0;
 }
 
 .alert-header h3 {
@@ -61,9 +63,14 @@
 }
 
 .alert-table-wrapper {
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
-  min-height: 0;
+  min-height: 300px;
+  max-height: 100%;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: white;
 }
 
 .alert-table-wrapper.scrollable {
@@ -303,4 +310,287 @@
 
 .alert-table-wrapper.scrollable::-webkit-scrollbar-thumb:hover {
   background: #764ba2;
+}
+
+/* Country Section Styling */
+.country-section {
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border-left: 5px solid #667eea;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.country-section.india-section {
+  border-left-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.03);
+}
+
+.country-section.usa-section {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.country-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.country-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e3c72;
+}
+
+.country-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  min-width: 35px;
+  text-align: center;
+  color: white;
+}
+
+.country-badge.india-badge {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+}
+
+.country-badge.usa-badge {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.no-data-message {
+  padding: 40px 20px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border: 2px dashed #e5e7eb;
+}
+
+.no-data-message p {
+  margin: 0;
+  font-size: 1rem;
+  color: #059669;
+  font-weight: 500;
+}
+
+.no-data-message p:last-child {
+  margin-top: 8px;
+}
+
+/* Fixed Height Table Container with Scroll */
+.alert-table-wrapper {
+  max-height: 180px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  flex-shrink: 1;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.alert-table-wrapper.scrollable {
+  overflow-y: scroll;
+}
+
+.alert-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+/* Sticky Table Header */
+.alert-table thead {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  z-index: 10;
+}
+
+.alert-table thead th {
+  color: white;
+  padding: 12px 15px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-bottom: 2px solid #667eea;
+  white-space: nowrap;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alert-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s ease;
+}
+
+.alert-table tbody tr:hover {
+  background-color: rgba(102, 126, 234, 0.05);
+}
+
+.alert-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.alert-table td {
+  padding: 12px 15px;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.emp-id-cell {
+  font-weight: 500;
+  color: #1e3c72;
+  width: 15%;
+}
+
+.emp-name-cell {
+  color: #4b5563;
+  width: 35%;
+}
+
+.classification-cell {
+  width: 50%;
+}
+
+.classification-input-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+}
+
+.classification-input {
+  padding: 8px 12px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  background-color: #f9fafb;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.classification-input:focus {
+  outline: none;
+  border-color: #667eea;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.classification-input::placeholder {
+  color: #9ca3af;
+}
+
+.normalized-preview {
+  padding: 6px 10px;
+  background-color: #f0f4ff;
+  border-left: 3px solid #667eea;
+  font-size: 0.85rem;
+  color: #667eea;
+  font-weight: 500;
+  border-radius: 4px;
+}
+
+.missing-row {
+  transition: background-color 0.15s ease;
+}
+
+.missing-row:hover {
+  background-color: rgba(102, 126, 234, 0.08);
+}
+
+/* Scrollbar Styling */
+.alert-table-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.alert-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.alert-table-wrapper::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
+}
+
+.alert-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+/* Firefox Scrollbar */
+.alert-table-wrapper {
+  scrollbar-color: #667eea #f1f1f1;
+  scrollbar-width: thin;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .country-section {
+    padding: 15px;
+  }
+
+  .country-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .country-badge {
+    align-self: flex-start;
+  }
+
+  .alert-table-wrapper {
+    max-height: 150px;
+    overflow-x: hidden;
+  }
+
+  .alert-table {
+    table-layout: fixed;
+  }
+
+  .alert-table td {
+    padding: 8px 8px;
+    font-size: 0.8rem;
+  }
+
+  .alert-table th {
+    padding: 8px 8px;
+    font-size: 0.75rem;
+  }
+
+  .emp-id-cell {
+    width: 20%;
+  }
+
+  .emp-name-cell {
+    width: 35%;
+  }
+
+  .classification-cell {
+    width: 45%;
+  }
 }
