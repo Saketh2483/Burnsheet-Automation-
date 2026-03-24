@@ -19,7 +19,7 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData }) {
   useEffect(() => {
     const loadMissingClassifications = async () => {
       try {
-        const response = await fetch('/Combined-Main.xlsx')
+        const response = await fetch('/Combined-Input.xlsx')
         if (!response.ok) {
           throw new Error(`Failed to load Excel file: ${response.statusText}`)
         }

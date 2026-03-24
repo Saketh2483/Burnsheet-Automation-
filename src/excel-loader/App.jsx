@@ -365,6 +365,15 @@ function App({ onLogout }) {
   const getFilteredData = () => {
     let filtered = sheetData;
     
+    // Filter by Country
+    const countryIndex = headers.findIndex(h => h.toLowerCase() === 'country');
+    if (countryIndex !== -1 && selectedCountry) {
+      filtered = filtered.filter(row => {
+        const rowCountry = String(row[countryIndex] || '').toLowerCase().trim();
+        return rowCountry === selectedCountry.toLowerCase();
+      });
+    }
+    
     if (selectedTower !== 'All') {
       const towerIndex = headers.findIndex(h => h.toLowerCase().includes('tower'));
       if (towerIndex !== -1) {
@@ -846,7 +855,13 @@ function App({ onLogout }) {
             <table className="data-table">
               <thead>
                 <tr>
-                  {headers.map((header, index) => <th key={`header-${index}`} data-column={header}>{header}</th>)}
+                  {headers.map((header, index) => {
+                    // Hide "Hourly Rate(Rs)" column when USA is selected
+                    if (selectedCountry === 'USA' && header.toLowerCase().includes('hourly rate') && header.toLowerCase().includes('rs')) {
+                      return null;
+                    }
+                    return <th key={`header-${index}`} data-column={header}>{header}</th>;
+                  })}
                 </tr>
               </thead>
               <tbody>
@@ -856,7 +871,13 @@ function App({ onLogout }) {
                   
                   return (
                     <tr key={`row-${rowIndex}`}>
-                      {paddedRow.map((_, cellIndex) => renderCell(paddedRow, cellIndex, rowIndex, headers[cellIndex] || ''))}
+                      {paddedRow.map((_, cellIndex) => {
+                        // Hide "Hourly Rate(Rs)" column when USA is selected
+                        if (selectedCountry === 'USA' && headers[cellIndex].toLowerCase().includes('hourly rate') && headers[cellIndex].toLowerCase().includes('rs')) {
+                          return null;
+                        }
+                        return renderCell(paddedRow, cellIndex, rowIndex, headers[cellIndex] || '');
+                      })}
                     </tr>
                   );
                 })}

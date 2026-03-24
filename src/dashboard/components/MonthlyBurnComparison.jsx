@@ -46,7 +46,7 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
   const loadExcelData = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/Combined-Main.xlsx')
+      const response = await fetch('/Combined-Input.xlsx')
       const blob = await response.blob()
       const arrayBuffer = await blob.arrayBuffer()
 

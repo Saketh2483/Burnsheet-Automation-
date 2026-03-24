@@ -1,10 +1,10 @@
 /**
  * Excel File Loader and Data Processor
- * Connects to the Excel file: Combined-Main.xlsx
+ * Connects to the Excel file: Combined-Input.xlsx
  * Processes Monthly Rate ($) and Actual Rate($) columns
  */
 
-const EXCEL_FILE_PATH = '/Combined-Main.xlsx'
+const EXCEL_FILE_PATH = '/Combined-Input.xlsx'
 
 /**
  * Load Excel file from public directory

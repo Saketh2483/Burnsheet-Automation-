@@ -9,7 +9,7 @@ function ResourceFlags({ data, onNavigateToResourceFlags }) {
   useEffect(() => {
     const loadCountryData = async () => {
       try {
-        const response = await fetch('/Combined-Main.xlsx')
+        const response = await fetch('/Combined-Input.xlsx')
         if (!response.ok) {
           throw new Error('Failed to load Excel file')
         }

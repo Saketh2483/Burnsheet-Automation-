@@ -4,7 +4,7 @@
  * Allows editing and saving back to Excel
  */
 
-const EXCEL_FILE_PATH = '/Combined-Main.xlsx'
+const EXCEL_FILE_PATH = '/Combined-Input.xlsx'
 
 /**
  * Load Excel file from public directory
