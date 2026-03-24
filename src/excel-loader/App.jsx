@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
+import XLSXStyle from 'xlsx-js-style';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
@@ -393,12 +394,428 @@ function App({ onLogout }) {
     return filtered;
   };
 
-  const exportToExcel = () => {
-    const exportData = [headers, ...getFilteredData()];
-    const ws = XLSX.utils.aoa_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Burnsheet Export');
-    XLSX.writeFile(wb, 'burnsheet-export.xlsx');
+  const exportToExcel = async () => {
+
+    const filteredData = getFilteredData();
+
+
+
+    const ci = (keywords) => headers.findIndex(h => keywords.some(k => h.toLowerCase().includes(k.toLowerCase())));
+
+
+
+    const idxEsaId       = ci(['esa id']);
+
+    const idxEsaDesc     = ci(['esa description']);
+
+    const idxTqId        = ci(['verizon tq id']);
+
+    const idxTqDesc      = ci(['verizon tq description']);
+
+    const idxPoc         = ci(['poc']);
+
+    const idxEmpId       = ci(['empid', 'employee id']);
+
+    const idxName        = ci(['name']);
+
+    const idxLocation    = ci(['location']);
+
+    const idxActPct      = ci(['act/pct', 'act code', 'pct code']);
+
+    const idxSkillSet    = ci(['skill set']);
+
+    const idxVzLevel     = ci(['verizon level']);
+
+    const idxClass       = ci(['classification']);
+
+    const idxKey         = ci(['key']);
+
+    const idxCogDesig    = ci(['cognizant designation']);
+
+    const idxServiceLine = ci(['service line']);
+
+    const idxTimesheet   = ci(['timesheet']);
+
+    const idxHrRs        = ci(['hourly rate(rs)', 'hourly rate (rs)']);
+
+    const idxHrUsd       = ci(['hourly rate($)', 'hourly rate ($)']);
+
+    const idxProjected   = ci(['projected rate']);
+
+    const idxActualRate  = ci(['actual rate', 'actual']);
+
+    const idxVariance    = ci(['variance']);
+
+    const idxJan         = ci(['jan-26', 'jan']);
+
+    const idxFeb         = ci(['feb-26', 'feb']);
+
+    const idxMar         = ci(['mar-26', 'mar']);
+
+
+
+    const get = (row, idx) => (idx !== -1 && row[idx] != null ? row[idx] : '');
+
+
+
+    const DATA_HEADERS = [
+
+      'EmpID', 'Name', 'Location', 'ACT/PCT', 'Skill Set',
+
+      'Verizon Level Mapping', 'Classification', 'Key',
+
+      'Cognizant Designation', 'Service Line', 'Timesheet',
+
+      'Hourly Rate(Rs)', 'Hourly Rate($)', 'Projected Rate($)',
+
+      'Actual Rate', 'Variance', 'Jan-26', 'Feb-26', 'Mar-26'
+
+    ];
+
+
+
+    const SKY_BLUE = { patternType: 'solid', fgColor: { rgb: '87CEEB' } };
+
+
+
+    const BORDER = {
+
+      top:    { style: 'thin', color: { rgb: '000000' } },
+
+      bottom: { style: 'thin', color: { rgb: '000000' } },
+
+      left:   { style: 'thin', color: { rgb: '000000' } },
+
+      right:  { style: 'thin', color: { rgb: '000000' } },
+
+    };
+
+
+
+    // Group rows by POC
+
+    const pocMap = new Map();
+
+    filteredData.forEach(row => {
+
+      const poc = get(row, idxPoc) || 'Unknown';
+
+      if (!pocMap.has(poc)) pocMap.set(poc, []);
+
+      pocMap.get(poc).push(row);
+
+    });
+
+
+
+    const wb = XLSXStyle.utils.book_new();
+
+
+
+    // --- Legend sheet (first tab) ---
+
+    try {
+
+      const csvText = await fetch('/legend.csv').then(r => r.text());
+
+      const legendRows = csvText.trim().split('\n').map(line => {
+
+        // Handle quoted fields with commas
+
+        const cols = [];
+
+        let cur = '', inQuote = false;
+
+        for (let i = 0; i < line.length; i++) {
+
+          const ch = line[i];
+
+          if (ch === '"') { inQuote = !inQuote; }
+
+          else if (ch === ',' && !inQuote) { cols.push(cur.trim()); cur = ''; }
+
+          else { cur += ch; }
+
+        }
+
+        cols.push(cur.trim());
+
+        return cols;
+
+      });
+
+
+
+      const legendWs = XLSXStyle.utils.aoa_to_sheet(legendRows);
+
+
+
+      // Autofit legend columns
+
+      const legendHeaders = legendRows[0] || [];
+
+      legendWs['!cols'] = legendHeaders.map((_, colIdx) => {
+
+        const maxLen = legendRows.reduce((max, row) =>
+
+          Math.max(max, row[colIdx] ? String(row[colIdx]).length : 0), 0);
+
+        return { wch: Math.min(maxLen + 2, 60) };
+
+      });
+
+
+
+      // Autofit legend row heights
+
+      legendWs['!rows'] = legendRows.map((row) => {
+
+        const maxLen = row.reduce((max, cell) => Math.max(max, cell ? String(cell).length : 0), 0);
+
+        return { hpt: Math.min(Math.ceil(maxLen / 40) * 15, 60) };
+
+      });
+
+
+
+      // Black fill + white bold font + border on header row
+
+      legendHeaders.forEach((_, c) => {
+
+        const addr = XLSXStyle.utils.encode_cell({ r: 0, c });
+
+        if (legendWs[addr]) legendWs[addr].s = {
+
+          fill: { patternType: 'solid', fgColor: { rgb: '000000' } },
+
+          font: { bold: true, color: { rgb: 'FFFFFF' } },
+
+          border: BORDER
+
+        };
+
+      });
+
+
+
+      // Apply borders to all data rows in legend sheet
+
+      for (let r = 1; r < legendRows.length; r++) {
+
+        for (let c = 0; c < legendHeaders.length; c++) {
+
+          const addr = XLSXStyle.utils.encode_cell({ r, c });
+
+          if (!legendWs[addr]) legendWs[addr] = { t: 's', v: '' };
+
+          legendWs[addr].s = { border: BORDER };
+
+        }
+
+      }
+
+
+
+      XLSXStyle.utils.book_append_sheet(wb, legendWs, 'Legend');
+
+    } catch (e) {
+
+      console.warn('Legend CSV could not be loaded:', e.message);
+
+    }
+
+    // --- End Legend sheet ---
+
+
+
+    pocMap.forEach((rows, poc) => {
+
+      const esaId   = get(rows[0], idxEsaId);
+
+      const esaDesc = get(rows[0], idxEsaDesc);
+
+      const tqId    = get(rows[0], idxTqId);
+
+      const tqDesc  = get(rows[0], idxTqDesc);
+
+
+
+      const dataRows = rows.map(row => [
+
+        get(row, idxEmpId),       get(row, idxName),        get(row, idxLocation),
+
+        get(row, idxActPct),      get(row, idxSkillSet),    get(row, idxVzLevel),
+
+        get(row, idxClass),       get(row, idxKey),         get(row, idxCogDesig),
+
+        get(row, idxServiceLine), get(row, idxTimesheet),   get(row, idxHrRs),
+
+        get(row, idxHrUsd),       get(row, idxProjected),   get(row, idxActualRate),
+
+        get(row, idxVariance),    get(row, idxJan),         get(row, idxFeb),
+
+        get(row, idxMar),
+
+      ]);
+
+
+
+      const sheetRows = [
+
+        ['ESA ID',                 esaId],
+
+        ['ESA Description',        esaDesc],
+
+        ['Verizon TQ ID',          tqId],
+
+        ['Verizon TQ Description', tqDesc],
+
+        ['POC',                    poc],
+
+        [], [],
+
+        DATA_HEADERS,
+
+        ...dataRows
+
+      ];
+
+
+
+      const ws = XLSXStyle.utils.aoa_to_sheet(sheetRows);
+
+      const totalRows = sheetRows.length;
+
+      const totalCols = DATA_HEADERS.length;
+
+
+
+      // Meta rows 0-4: col A = sky blue + bold + border, col B = no fill + border only
+
+      for (let r = 0; r < 5; r++) {
+
+        const labelAddr = XLSXStyle.utils.encode_cell({ r, c: 0 });
+
+        if (!ws[labelAddr]) ws[labelAddr] = { t: 's', v: '' };
+
+        ws[labelAddr].s = { fill: SKY_BLUE, font: { bold: true }, border: BORDER };
+
+
+
+        const valueAddr = XLSXStyle.utils.encode_cell({ r, c: 1 });
+
+        if (!ws[valueAddr]) ws[valueAddr] = { t: 's', v: '' };
+
+        ws[valueAddr].s = { border: BORDER };
+
+      }
+
+
+
+      // Borders + sky blue on data header row (row 7), borders only on data rows (row 8+)
+
+      for (let r = 7; r < totalRows; r++) {
+
+        for (let c = 0; c < totalCols; c++) {
+
+          const cellAddr = XLSXStyle.utils.encode_cell({ r, c });
+
+          if (!ws[cellAddr]) ws[cellAddr] = { t: 's', v: '' };
+
+          ws[cellAddr].s = r === 7
+
+            ? { fill: SKY_BLUE, font: { bold: true }, border: BORDER, alignment: { horizontal: 'center', wrapText: true } }
+
+            : { border: BORDER, alignment: { wrapText: true } };
+
+        }
+
+      }
+
+
+
+      // Autofit column widths — col 0 & 1 from meta rows, rest from data headers/rows
+
+      const metaLabelMaxLen = ['ESA ID', 'ESA Description', 'Verizon TQ ID', 'Verizon TQ Description', 'POC']
+
+        .reduce((max, s) => Math.max(max, s.length), 0);
+
+      const metaValueMaxLen = [esaId, esaDesc, tqId, tqDesc, poc]
+
+        .reduce((max, s) => Math.max(max, s ? String(s).length : 0), 0);
+
+
+
+      ws['!cols'] = [
+
+        { wch: metaLabelMaxLen + 2 },
+
+        { wch: Math.min(metaValueMaxLen + 2, 50) },
+
+        ...DATA_HEADERS.slice(2).map((header, i) => {
+
+          const colIdx = i + 2;
+
+          const maxLen = dataRows.reduce((max, row) => Math.max(max, row[colIdx] ? String(row[colIdx]).length : 0), header.length);
+
+          return { wch: Math.min(maxLen + 2, 50) };
+
+        })
+
+      ];
+
+
+
+      // Also set data column widths starting from col 0 based on DATA_HEADERS
+
+      const dataColWidths = DATA_HEADERS.map((header, colIdx) => {
+
+        const maxLen = dataRows.reduce((max, row) => Math.max(max, row[colIdx] ? String(row[colIdx]).length : 0), header.length);
+
+        return { wch: Math.min(maxLen + 2, 50) };
+
+      });
+
+      // Merge: col 0 = max of meta label vs data col 0, col 1 = max of meta value vs data col 1
+
+      dataColWidths[0] = { wch: Math.max(dataColWidths[0].wch, metaLabelMaxLen + 2) };
+
+      dataColWidths[1] = { wch: Math.max(dataColWidths[1].wch, Math.min(metaValueMaxLen + 2, 50)) };
+
+      ws['!cols'] = dataColWidths;
+
+
+
+      // Autofit row heights
+
+      ws['!rows'] = sheetRows.map((_, rIdx) => {
+
+        if (rIdx < 7) return { hpt: 18 };
+
+        const maxLines = DATA_HEADERS.reduce((max, _, cIdx) => {
+
+          const val = sheetRows[rIdx][cIdx] ? String(sheetRows[rIdx][cIdx]) : '';
+
+          return Math.max(max, Math.ceil(val.length / 30) || 1);
+
+        }, 1);
+
+        return { hpt: Math.min(maxLines * 15, 60) };
+
+      });
+
+
+
+      const safeName = poc.replace(/[\\/:*?[\]]/g, '').substring(0, 31);
+
+      XLSXStyle.utils.book_append_sheet(wb, ws, safeName || 'Sheet');
+
+    });
+
+
+
+    XLSXStyle.writeFile(wb, 'burnsheet-export.xlsx');
+
   };
 
   const exportToPDF = async () => {

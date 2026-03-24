@@ -90,7 +90,12 @@ def combine_excel_sheets(input_file, output_file):
                 if isinstance(header_value, datetime):
                     header_row_mapping[col] = header_value
                 else:
-                    header_row_mapping[col] = str(header_value).strip()
+                    # Only map if this header hasn't been mapped yet (avoid duplicates)
+                    header_str = str(header_value).strip()
+                    # Check if this header name already exists in our mapping
+                    header_exists = any(v == header_str for v in header_row_mapping.values())
+                    if not header_exists:
+                        header_row_mapping[col] = header_str
         
         # Process data rows (starting from the row after the header row)
         for row in range(header_row_number + 1, ws_input.max_row + 1):
@@ -112,7 +117,9 @@ def combine_excel_sheets(input_file, output_file):
             for col, header in header_row_mapping.items():
                 if header:
                     cell_value = ws_input.cell(row=row, column=col).value
-                    row_data[header] = cell_value
+                    # Only add if we haven't seen this header before (first occurrence wins)
+                    if header not in row_data:
+                        row_data[header] = cell_value
             
             # Process and map data to output columns
             output_row = [None] * len(headers)
@@ -134,8 +141,6 @@ def combine_excel_sheets(input_file, output_file):
                                 break
                     if emp_value is not None:
                         output_row[header_idx] = emp_value
-                elif header in row_data:
-                    output_row[header_idx] = row_data[header]
                 elif header == "Country":
                     output_row[header_idx] = country
                 elif header == "Verizon TQ ID":
@@ -149,6 +154,41 @@ def combine_excel_sheets(input_file, output_file):
                     projected_rate = row_data.get("Projected Rate($)", None)
                     if projected_rate is not None:
                         output_row[header_idx] = projected_rate
+                else:
+                    # Try to find the matching column in row_data with flexible matching
+                    value_found = False
+                    
+                    # First try exact match
+                    if header in row_data:
+                        output_row[header_idx] = row_data[header]
+                        value_found = True
+                    else:
+                        # Try case-insensitive match with flexible whitespace
+                        for key, value in row_data.items():
+                            if key and isinstance(key, str):
+                                if key.strip().lower() == header.strip().lower():
+                                    output_row[header_idx] = value
+                                    value_found = True
+                                    break
+                        
+                        # Special handling for ESA Description - try alternative names
+                        if not value_found and header == "ESA Description":
+                            for key, value in row_data.items():
+                                if key and isinstance(key, str):
+                                    key_lower = key.strip().lower()
+                                    if 'esa' in key_lower and 'description' in key_lower:
+                                        output_row[header_idx] = value
+                                        value_found = True
+                                        break
+                            
+                            # If still not found, try "Description" alone
+                            if not value_found:
+                                for key, value in row_data.items():
+                                    if key and isinstance(key, str):
+                                        if key.strip().lower() == 'description':
+                                            output_row[header_idx] = value
+                                            value_found = True
+                                            break
             
             # Handle Classification and Key based on country
             classification = None
