@@ -389,6 +389,49 @@ function App({ onLogout }) {
     XLSX.writeFile(wb, 'burnsheet-export.xlsx');
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 30;
+    const usableWidth = pageWidth - margin * 2;
+    const countryIndex = headers.findIndex(h => h.toLowerCase() === 'country');
+
+    const indiaRows = sheetData.filter(row => row[countryIndex]?.toLowerCase() === 'india');
+    const usaRows = sheetData.filter(row => row[countryIndex]?.toLowerCase() === 'usa');
+    const sections = [
+      { label: 'India', rows: indiaRows },
+      { label: 'USA', rows: usaRows }
+    ];
+
+    const colWidths = headers.map((header, colIdx) => {
+      const maxLen = sheetData.reduce((max, row) => Math.max(max, String(row[colIdx] || '').length), header.length);
+      return Math.min(Math.max(maxLen * 5.5, 40), 160);
+    });
+    const scale = usableWidth / colWidths.reduce((a, b) => a + b, 0);
+    const scaledWidths = colWidths.map(w => w * scale);
+
+    sections.forEach(({ label, rows }, i) => {
+      if (i > 0) doc.addPage();
+      doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+      doc.text('Verizon Home & Marketing Burnsheet', margin, 30);
+      doc.setFontSize(12);
+      doc.text(label, pageWidth - margin, 30, { align: 'right' });
+      doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+      doc.text(`Tower: ${selectedTower}   |   Month: ${selectedMonth}   |   Records: ${rows.length}   |   $ Value: ${dollarValue}`, margin, 46);
+      autoTable(doc, {
+        head: [headers], body: rows, startY: 56,
+        styles: { fontSize: 6.5, cellPadding: { top: 3, right: 4, bottom: 3, left: 4 }, overflow: 'ellipsize', halign: 'left', valign: 'middle', lineColor: [220, 220, 220], lineWidth: 0.3 },
+        headStyles: { fillColor: [220, 0, 0], textColor: 255, fontStyle: 'bold', fontSize: 6.5 },
+        alternateRowStyles: { fillColor: [248, 248, 248] },
+        columnStyles: Object.fromEntries(scaledWidths.map((w, idx) => [idx, { cellWidth: w }])),
+        margin: { left: margin, right: margin }, tableWidth: usableWidth,
+      });
+    });
+
+    const timestamp = new Date().toISOString().slice(0, 10);
+    doc.save(`burnsheet-${timestamp}.pdf`);
+  };
+
   const saveToExcel = async () => {
     try {
       // Create workbook with all data (including filtered data)
@@ -409,66 +452,7 @@ function App({ onLogout }) {
     }
   };
 
-  const exportToPDF = () => {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-    const filteredData = getFilteredData();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 30;
-    const usableWidth = pageWidth - margin * 2;
-
-    // Auto-calculate column widths based on content
-    const colWidths = headers.map((header, colIdx) => {
-      const maxContentLen = filteredData.reduce((max, row) => {
-        const val = row[colIdx] ? String(row[colIdx]).length : 0;
-        return Math.max(max, val);
-      }, header.length);
-      return Math.min(Math.max(maxContentLen * 5.5, 40), 160);
-    });
-
-    const totalCalc = colWidths.reduce((a, b) => a + b, 0);
-    const scale = usableWidth / totalCalc;
-    const scaledWidths = colWidths.map(w => w * scale);
-
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Verizon Home & Marketing Burnsheet', margin, 30);
-
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Tower: ${selectedTower}   |   Month: ${selectedMonth}   |   Records: ${filteredData.length}   |   $ Value: ${dollarValue}`, margin, 46);
-
-    autoTable(doc, {
-      head: [headers],
-      body: filteredData,
-      startY: 56,
-      styles: {
-        fontSize: 6.5,
-        cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
-        overflow: 'ellipsize',
-        halign: 'left',
-        valign: 'middle',
-        lineColor: [220, 220, 220],
-        lineWidth: 0.3,
-      },
-      headStyles: {
-        fillColor: [220, 0, 0],
-        textColor: 255,
-        fontStyle: 'bold',
-        fontSize: 6.5,
-        halign: 'left',
-        valign: 'middle',
-      },
-      alternateRowStyles: { fillColor: [248, 248, 248] },
-      columnStyles: Object.fromEntries(scaledWidths.map((w, i) => [i, { cellWidth: w }])),
-      margin: { left: margin, right: margin },
-      tableWidth: usableWidth,
-    });
-
-    const timestamp = new Date().toISOString().slice(0, 10);
-    doc.save(`burnsheet-summary-${timestamp}.pdf`);
-  };
-
-  const handleReconciliation = () => {
+    const handleReconciliation = () => {
     // Find the timesheet/hours column index
     const timesheetColIndex = headers.findIndex(h => {
       const lower = h.toLowerCase();
@@ -695,6 +679,7 @@ function App({ onLogout }) {
     <div className="excel-viewer">
       <div className="file-selection-section">
         <div className="header-top">
+          <div className="header-left"></div>
           <h1>Verizon Home & Marketing Burnsheet</h1>
           <div className="header-right">
             <div className="profile-menu" ref={profileRef}>
