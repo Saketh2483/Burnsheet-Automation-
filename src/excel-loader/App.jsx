@@ -34,6 +34,7 @@ function App({ onLogout }) {
   const [expandedSkillCell, setExpandedSkillCell] = useState(null);
   const [tqDataMessage, setTqDataMessage] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [changedRowIndices, setChangedRowIndices] = useState(new Set());
   const [isChatOpen, setIsChatOpen] = useState(false);
   const initialChatMessages = [
     { id: 1, text: 'Last updated dollar value is 83.49. Needs to update please enter the value.', sender: 'bot' }
@@ -312,7 +313,7 @@ function App({ onLogout }) {
       
       const actualRateColIndex = headers.findIndex(h => {
         const lower = h.toLowerCase();
-        return lower.includes('actual rate') || (lower.includes('actual') && lower.includes('$'));
+        return lower.includes('actual rate') || (lower.includes('actual') && lower.includes('$') && !lower.includes('hourly'));
       });
       
       const projectedRateColIndex = headers.findIndex(h => {
@@ -351,18 +352,13 @@ function App({ onLogout }) {
     // Only activate Reconcile button if non-timesheet columns are changed
     if (!isTimesheetColumn) {
       setHasChanges(true);
+      // Track which rows have been changed
+      setChangedRowIndices(prev => new Set([...prev, rowIndex]));
     }
   };
 
   const getFilteredData = () => {
     let filtered = sheetData;
-
-    if (selectedCountry !== 'All') {
-      const countryIndex = headers.findIndex(h => h.toLowerCase() === 'country');
-      if (countryIndex !== -1) {
-        filtered = filtered.filter(row => row[countryIndex]?.toLowerCase() === selectedCountry.toLowerCase());
-      }
-    }
     
     if (selectedTower !== 'All') {
       const towerIndex = headers.findIndex(h => h.toLowerCase().includes('tower'));
@@ -468,7 +464,7 @@ function App({ onLogout }) {
     // Find the actual rate column index
     const actualRateColIndex = headers.findIndex(h => {
       const lower = h.toLowerCase();
-      return lower.includes('actual rate') || (lower.includes('rate') && lower.includes('$'));
+      return lower.includes('actual rate') || (lower.includes('rate') && lower.includes('$') && !lower.includes('hourly'));
     });
     
     // Find the projected rate column index
@@ -499,22 +495,38 @@ function App({ onLogout }) {
       return;
     }
 
-    // Update actual rate and variance for each row
-    const updatedData = sheetData.map(row => {
+    // Update actual rate and variance for ONLY the changed rows
+    let rowsWithActualRateUpdated = 0;
+    let rowsWithVarianceUpdated = 0;
+    
+    const updatedData = sheetData.map((row, rowIdx) => {
       const newRow = [...row];
+      
+      // Only reconcile rows that were actually changed by the user
+      if (!changedRowIndices.has(rowIdx)) {
+        return newRow;
+      }
+      
       const timesheetHours = parseFloat(newRow[timesheetColIndex]?.toString().replace(/[^0-9.-]/g, ''));
       const hourlyRate = parseFloat(newRow[hourlyRateColIndex]?.toString().replace(/[^0-9.-]/g, ''));
       
+      // Only update actual rate and variance if BOTH timesheet hours and hourly rate are valid
       if (!isNaN(timesheetHours) && !isNaN(hourlyRate) && timesheetHours > 0 && hourlyRate > 0) {
         const actualRate = timesheetHours * hourlyRate;
         newRow[actualRateColIndex] = actualRate.toFixed(2);
+        rowsWithActualRateUpdated++;
         
-        // Calculate and update variance if projected rate column exists
+        // Calculate and update variance ONLY if projected rate column exists AND has a valid value
         if (varianceColIndex >= 0 && projectedRateColIndex >= 0) {
-          const projectedRate = parseFloat(newRow[projectedRateColIndex]?.toString().replace(/[^0-9.-]/g, ''));
-          if (!isNaN(projectedRate)) {
-            const variance = projectedRate - actualRate;
-            newRow[varianceColIndex] = variance.toFixed(2);
+          const projectedRateStr = newRow[projectedRateColIndex]?.toString().trim() || '';
+          // Only calculate variance if projected rate column has a non-empty value
+          if (projectedRateStr) {
+            const projectedRate = parseFloat(projectedRateStr.replace(/[^0-9.-]/g, ''));
+            if (!isNaN(projectedRate)) {
+              const variance = projectedRate - actualRate;
+              newRow[varianceColIndex] = variance.toFixed(2);
+              rowsWithVarianceUpdated++;
+            }
           }
         }
       }
@@ -524,16 +536,18 @@ function App({ onLogout }) {
 
     setSheetData(updatedData);
     
-    alert(`✅ Reconciliation Completed!\n\nUpdated ${updatedData.length} rows with calculated actual rates and variance.\n\nFormulas:\n• Actual Rate: ${headers[timesheetColIndex]} × ${headers[hourlyRateColIndex]}\n• Variance: ${headers[projectedRateColIndex]} - ${headers[actualRateColIndex]}`);
     console.log('Reconciliation Details:', {
       timesheetColumn: headers[timesheetColIndex],
       hourlyRateColumn: headers[hourlyRateColIndex],
       actualRateColumn: headers[actualRateColIndex],
       projectedRateColumn: headers[projectedRateColIndex],
       varianceColumn: headers[varianceColIndex],
-      rowsUpdated: updatedData.length
+      rowsWithActualRateUpdated,
+      rowsWithVarianceUpdated,
+      changedRowCount: changedRowIndices.size
     });
     setHasChanges(false);
+    setChangedRowIndices(new Set()); // Clear the changed rows after reconciliation
   };
 
   const handleSendMessage = () => {
