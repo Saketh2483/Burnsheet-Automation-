@@ -80,7 +80,6 @@ function ResourceFlags({ data, onNavigateToResourceFlags }) {
         </div>
       )}
 
-      {/* Area Graph Card */}
       <HomeMarketingChart />
     </div>
   )

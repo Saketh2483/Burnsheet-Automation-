@@ -2,7 +2,10 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import html2canvas from 'html2canvas';
 import CombinedDashboard from '../dashboard/components/CombinedDashboard';
+import BarGraph from '../dashboard/components/BarGraph';
+import ResourceFlags from '../dashboard/components/ResourceFlags';
 import { loadAndProcessExcelData } from '../dashboard/utils/excelLoader';
 import { loadIndividualBurnData } from '../dashboard/utils/individualBurnLoader';
 import { loadResourceFlagsData } from '../dashboard/utils/resourceFlagsLoader';
@@ -46,6 +49,8 @@ function App({ onLogout }) {
   const [selectedCountry, setSelectedCountry] = useState('India');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
+  const chartBarRef = useRef(null);
+  const chartPieRef = useRef(null);
   const [showDashboard, setShowDashboard] = useState(false);
   const [dashboardData, setDashboardData] = useState({ overall: null, individual: null, resourceFlags: null, loading: false, error: null });
 
@@ -385,9 +390,10 @@ function App({ onLogout }) {
     XLSX.writeFile(wb, 'burnsheet-export.xlsx');
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 30;
     const usableWidth = pageWidth - margin * 2;
     const countryIndex = headers.findIndex(h => h.toLowerCase() === 'country');
@@ -423,6 +429,53 @@ function App({ onLogout }) {
         margin: { left: margin, right: margin }, tableWidth: usableWidth,
       });
     });
+
+    // Load dashboard data if not already loaded
+    if (!dashboardData.overall) {
+      setDashboardData(prev => ({ ...prev, loading: true }));
+      try {
+        const [overall, individual, resourceFlags] = await Promise.all([
+          loadAndProcessExcelData(),
+          loadIndividualBurnData(),
+          loadResourceFlagsData()
+        ]);
+        setDashboardData({ overall, individual, resourceFlags, loading: false, error: null });
+        await new Promise(r => setTimeout(r, 1500));
+      } catch (err) {
+        console.error('Failed to load dashboard data for PDF:', err);
+      }
+    } else {
+      await new Promise(r => setTimeout(r, 600));
+    }
+
+    const captureChart = async (ref, title) => {
+      if (!ref.current) return;
+      await new Promise(r => setTimeout(r, 600));
+      const canvas = await html2canvas(ref.current, {
+        scale: 1.5, useCORS: true, backgroundColor: '#ffffff',
+        width: ref.current.scrollWidth, height: ref.current.scrollHeight,
+        scrollX: -99999, scrollY: -99999,
+        windowWidth: ref.current.scrollWidth,
+        windowHeight: ref.current.scrollHeight,
+        x: 0, y: 0,
+      });
+      doc.addPage();
+      doc.setFillColor(220, 0, 0);
+      doc.rect(0, 0, pageWidth, 36, 'F');
+      doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+      doc.text(title, margin, 24);
+      doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+      doc.text(new Date().toLocaleDateString(), pageWidth - margin, 24, { align: 'right' });
+      doc.setTextColor(0, 0, 0);
+      const availH = pageHeight - 40 - margin;
+      const imgW = usableWidth;
+      const imgH = (canvas.height / canvas.width) * imgW;
+      const finalH = Math.min(imgH, availH);
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', margin, 40, imgW, finalH);
+    };
+
+    await captureChart(chartBarRef, 'Monthly Burn');
+    await captureChart(chartPieRef, 'Resource Flags');
 
     const timestamp = new Date().toISOString().slice(0, 10);
     doc.save(`burnsheet-${timestamp}.pdf`);
@@ -871,6 +924,17 @@ function App({ onLogout }) {
             </button>
           </div>
         </div>
+      )}
+
+      {dashboardData.overall && dashboardData.individual && dashboardData.resourceFlags && (
+        <>
+          <div ref={chartBarRef} style={{ position: 'fixed', left: '-99999px', top: '-99999px', width: '1200px', background: '#fff', visibility: 'visible', pointerEvents: 'none', padding: '20px' }}>
+            <BarGraph data={dashboardData.overall} />
+          </div>
+          <div ref={chartPieRef} style={{ position: 'fixed', left: '-99999px', top: '-99999px', width: '1200px', background: '#fff', visibility: 'visible', pointerEvents: 'none', padding: '20px' }}>
+            <ResourceFlags data={dashboardData.resourceFlags} />
+          </div>
+        </>
       )}
     </div>
   );
