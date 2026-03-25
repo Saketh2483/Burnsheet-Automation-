@@ -7,6 +7,8 @@ import html2canvas from 'html2canvas';
 import CombinedDashboard from '../dashboard/components/CombinedDashboard';
 import BarGraph from '../dashboard/components/BarGraph';
 import ResourceFlags from '../dashboard/components/ResourceFlags';
+import HomeMarketingChart from '../dashboard/components/HomeMarketingChart';
+import MissingClassificationsAlert from '../dashboard/components/MissingClassificationsAlert';
 import { loadAndProcessExcelData } from '../dashboard/utils/excelLoader';
 import { loadIndividualBurnData } from '../dashboard/utils/individualBurnLoader';
 import { loadResourceFlagsData } from '../dashboard/utils/resourceFlagsLoader';
@@ -52,7 +54,10 @@ function App({ onLogout }) {
   const profileRef = useRef(null);
   const chartBarRef = useRef(null);
   const chartPieRef = useRef(null);
+  const chartHomeRef = useRef(null);
+  const chartMissingRef = useRef(null);
   const [showDashboard, setShowDashboard] = useState(true);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [dashboardData, setDashboardData] = useState({ overall: null, individual: null, resourceFlags: null, loading: false, error: null });
 
   const handleOpenDashboard = useCallback(async () => {
@@ -819,20 +824,57 @@ function App({ onLogout }) {
   };
 
   const exportToPDF = async () => {
+    setPdfLoading(true);
+    try {
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 30;
     const usableWidth = pageWidth - margin * 2;
-    const countryIndex = headers.findIndex(h => h.toLowerCase() === 'country');
 
+    const addPageHeader = (title, subtitle) => {
+      doc.setFillColor(220, 0, 0); doc.rect(0, 0, pageWidth, 40, 'F');
+      doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+      doc.text(title, margin, 26);
+      if (subtitle) { doc.setFontSize(10); doc.setFont('helvetica', 'normal'); doc.text(subtitle, pageWidth - margin, 26, { align: 'right' }); }
+      doc.setTextColor(0, 0, 0);
+    };
+
+    if (!dashboardData.overall) {
+      setDashboardData(prev => ({ ...prev, loading: true }));
+      try {
+        const [overall, individual, resourceFlags] = await Promise.all([loadAndProcessExcelData(), loadIndividualBurnData(), loadResourceFlagsData()]);
+        setDashboardData({ overall, individual, resourceFlags, loading: false, error: null });
+        await new Promise(r => setTimeout(r, 2000));
+      } catch (err) { console.error('Failed to load dashboard data for PDF:', err); }
+    } else { await new Promise(r => setTimeout(r, 800)); }
+
+    let firstChart = true;
+    const captureChart = async (ref, title, subtitle) => {
+      if (!ref.current) return;
+      await new Promise(r => setTimeout(r, 800));
+      const canvas = await html2canvas(ref.current, {
+        scale: 1.5, useCORS: true, backgroundColor: '#ffffff',
+        width: ref.current.scrollWidth, height: ref.current.scrollHeight,
+        scrollX: -99999, scrollY: -99999,
+        windowWidth: ref.current.scrollWidth, windowHeight: ref.current.scrollHeight, x: 0, y: 0,
+      });
+      if (!firstChart) doc.addPage();
+      firstChart = false;
+      addPageHeader(title, subtitle);
+      const imgW = usableWidth;
+      const imgH = (canvas.height / canvas.width) * imgW;
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', margin, 50, imgW, Math.min(imgH, pageHeight - 50 - margin));
+    };
+
+    await captureChart(chartBarRef, 'Monthly Burn Comparison', 'Baseline Rate vs Monthly Burn Rate');
+    await captureChart(chartPieRef, 'Classification Distribution', 'Resource Flags');
+    await captureChart(chartHomeRef, 'H & M Tower Performance', 'Monthly Average Rate by Country');
+    await captureChart(chartMissingRef, 'Missing Classifications', 'Employees pending classification');
+
+    const countryIndex = headers.findIndex(h => h.toLowerCase() === 'country');
     const indiaRows = sheetData.filter(row => row[countryIndex]?.toLowerCase() === 'india');
     const usaRows = sheetData.filter(row => row[countryIndex]?.toLowerCase() === 'usa');
-    const sections = [
-      { label: 'India', rows: indiaRows },
-      { label: 'USA', rows: usaRows }
-    ];
-
     const colWidths = headers.map((header, colIdx) => {
       const maxLen = sheetData.reduce((max, row) => Math.max(max, String(row[colIdx] || '').length), header.length);
       return Math.min(Math.max(maxLen * 5.5, 40), 160);
@@ -840,73 +882,27 @@ function App({ onLogout }) {
     const scale = usableWidth / colWidths.reduce((a, b) => a + b, 0);
     const scaledWidths = colWidths.map(w => w * scale);
 
-    sections.forEach(({ label, rows }, i) => {
-      if (i > 0) doc.addPage();
-      doc.setFontSize(14); doc.setFont('helvetica', 'bold');
-      doc.text('Verizon Home & Marketing Burnsheet', margin, 30);
-      doc.setFontSize(12);
-      doc.text(label, pageWidth - margin, 30, { align: 'right' });
-      doc.setFontSize(8); doc.setFont('helvetica', 'normal');
-      doc.text(`Tower: ${selectedTower}   |   Month: ${selectedMonth}   |   Records: ${rows.length}   |   $ Value: ${dollarValue}`, margin, 46);
+    const addDataTable = (label, rows) => {
+      doc.addPage(); addPageHeader('Verizon Home & Marketing Burnsheet', label);
+      doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(80, 80, 80);
+      doc.text(`Records: ${rows.length}   |   Tower: ${selectedTower}   |   Month: ${selectedMonth}   |   $ Value: ${dollarValue}`, margin, 52);
+      doc.setTextColor(0, 0, 0);
       autoTable(doc, {
-        head: [headers], body: rows, startY: 56,
-        styles: { fontSize: 6.5, cellPadding: { top: 3, right: 4, bottom: 3, left: 4 }, overflow: 'ellipsize', halign: 'left', valign: 'middle', lineColor: [220, 220, 220], lineWidth: 0.3 },
+        head: [headers], body: rows, startY: 60,
+        styles: { fontSize: 6, cellPadding: { top: 2, right: 3, bottom: 2, left: 3 }, overflow: 'ellipsize', halign: 'left', valign: 'middle', lineColor: [220, 220, 220], lineWidth: 0.3 },
         headStyles: { fillColor: [220, 0, 0], textColor: 255, fontStyle: 'bold', fontSize: 6.5 },
         alternateRowStyles: { fillColor: [248, 248, 248] },
         columnStyles: Object.fromEntries(scaledWidths.map((w, idx) => [idx, { cellWidth: w }])),
         margin: { left: margin, right: margin }, tableWidth: usableWidth,
       });
-    });
-
-    // Load dashboard data if not already loaded
-    if (!dashboardData.overall) {
-      setDashboardData(prev => ({ ...prev, loading: true }));
-      try {
-        const [overall, individual, resourceFlags] = await Promise.all([
-          loadAndProcessExcelData(),
-          loadIndividualBurnData(),
-          loadResourceFlagsData()
-        ]);
-        setDashboardData({ overall, individual, resourceFlags, loading: false, error: null });
-        await new Promise(r => setTimeout(r, 1500));
-      } catch (err) {
-        console.error('Failed to load dashboard data for PDF:', err);
-      }
-    } else {
-      await new Promise(r => setTimeout(r, 600));
-    }
-
-    const captureChart = async (ref, title) => {
-      if (!ref.current) return;
-      await new Promise(r => setTimeout(r, 600));
-      const canvas = await html2canvas(ref.current, {
-        scale: 1.5, useCORS: true, backgroundColor: '#ffffff',
-        width: ref.current.scrollWidth, height: ref.current.scrollHeight,
-        scrollX: -99999, scrollY: -99999,
-        windowWidth: ref.current.scrollWidth,
-        windowHeight: ref.current.scrollHeight,
-        x: 0, y: 0,
-      });
-      doc.addPage();
-      doc.setFillColor(220, 0, 0);
-      doc.rect(0, 0, pageWidth, 36, 'F');
-      doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-      doc.text(title, margin, 24);
-      doc.setFontSize(8); doc.setFont('helvetica', 'normal');
-      doc.text(new Date().toLocaleDateString(), pageWidth - margin, 24, { align: 'right' });
-      doc.setTextColor(0, 0, 0);
-      const availH = pageHeight - 40 - margin;
-      const imgW = usableWidth;
-      const imgH = (canvas.height / canvas.width) * imgW;
-      const finalH = Math.min(imgH, availH);
-      doc.addImage(canvas.toDataURL('image/png'), 'PNG', margin, 40, imgW, finalH);
     };
 
-    await captureChart(chartBarRef, 'Monthly Burn');
-    await captureChart(chartPieRef, 'Resource Flags');
-
-    const timestamp = new Date().toISOString().slice(0, 10);
-    doc.save(`burnsheet-${timestamp}.pdf`);
+    addDataTable('India', indiaRows);
+    addDataTable('USA', usaRows);
+    doc.save(`burnsheet-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } finally {
+      setPdfLoading(false);
+    }
   };
 
   const saveToExcel = async () => {
@@ -1175,7 +1171,7 @@ function App({ onLogout }) {
       <div className="file-selection-section">
         <div className="header-top">
           <div className="header-left"></div>
-          <h1>Verizon Home & Marketing Burnsheet</h1>
+          <h1>{showDashboard ? 'Verizon Home & Marketing Dashboard' : 'Verizon Home & Marketing Burnsheet'}</h1>
           <div className="header-right">
             <div className="profile-menu" ref={profileRef}>
               <span className="welcome-text">Welcome, Admin 👋</span>
@@ -1283,10 +1279,6 @@ function App({ onLogout }) {
           {showDashboard ? (
             // Dashboard View
             <div style={{ background: '#f0f2f5', minHeight: '70vh', overflowY: 'auto' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 28px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', marginBottom: '20px' }}>
-                <h2 style={{ color: 'white', margin: 0 }}>📈 Rate Analysis Dashboard</h2>
-                <button onClick={() => setShowDashboard(false)} className="export-btn resource-burn-btn" style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: 'white', fontSize: 14, borderRadius: 8, padding: '8px 16px', cursor: 'pointer', marginRight: '10px' }} title="Back to Resource Burn">� Resource Burn</button>
-              </div>
               {dashboardData.loading && <div style={{ textAlign: 'center', padding: 60, fontSize: 20 }}>⏳ Loading Dashboard...</div>}
               {dashboardData.error && <div style={{ textAlign: 'center', padding: 40, color: 'red' }}>❌ {dashboardData.error}</div>}
               {dashboardData.overall && dashboardData.individual && dashboardData.resourceFlags && (
@@ -1294,6 +1286,7 @@ function App({ onLogout }) {
                   overallData={dashboardData.overall}
                   individualData={dashboardData.individual}
                   resourceFlagsData={dashboardData.resourceFlags}
+                  onNavigateBack={() => setShowDashboard(false)}
                 />
               )}
             </div>
@@ -1334,6 +1327,14 @@ function App({ onLogout }) {
             </div>
           )}
         </>
+      )}
+
+      {pdfLoading && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+          <div style={{ width: 56, height: 56, border: '6px solid rgba(255,255,255,0.3)', borderTop: '6px solid #fff', borderRadius: '50%', animation: 'spin 0.9s linear infinite' }} />
+          <p style={{ color: '#fff', fontSize: 18, fontWeight: 600, margin: 0 }}>Generating PDF...</p>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, margin: 0 }}>Please wait while charts are being captured</p>
+        </div>
       )}
 
       {/* Chat Icon Button */}
@@ -1384,6 +1385,12 @@ function App({ onLogout }) {
           </div>
           <div ref={chartPieRef} style={{ position: 'fixed', left: '-99999px', top: '-99999px', width: '1200px', background: '#fff', visibility: 'visible', pointerEvents: 'none', padding: '20px' }}>
             <ResourceFlags data={dashboardData.resourceFlags} />
+          </div>
+          <div ref={chartHomeRef} style={{ position: 'fixed', left: '-99999px', top: '-99999px', width: '1200px', background: '#fff', visibility: 'visible', pointerEvents: 'none', padding: '20px' }}>
+            <HomeMarketingChart />
+          </div>
+          <div ref={chartMissingRef} style={{ position: 'fixed', left: '-99999px', top: '-99999px', width: '1200px', background: '#fff', visibility: 'visible', pointerEvents: 'none', padding: '20px' }}>
+            <MissingClassificationsAlert data={dashboardData.missingClassifications} />
           </div>
         </>
       )}

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   BarChart,
   Bar,
@@ -6,6 +7,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
   Cell,
 } from 'recharts'
@@ -120,7 +122,7 @@ function getRegionTotals(rows, type = 'projected') {
                     country === 'united states' ||
                     country === 'united states of america' ||
                     country.includes('usa') ||
-                    (country.includes('us') && !country.includes('india')) ||
+                    country.includes('us') && !country.includes('india') ||
                     country.startsWith('usa') || 
                     country.startsWith('us ') ||
                     country.startsWith('united');
@@ -155,42 +157,82 @@ function getRegionTotals(rows, type = 'projected') {
   return { india, us, indiaAvg, usAvg }
 }
 
-function StatsTooltip({ visible, x, y, indiaValue, usValue, label }) {
-  if (!visible) return null
-  return (
+function UnifiedTooltip({ visible, x, y, name, value, indiaAvg, usAvg, isChart = false }) {
+  if (!visible && !isChart) return null
+  
+  // Calculate smart positioning to avoid going off-screen
+  const tooltipWidth = 260
+  const tooltipHeight = 140
+  const offset = 15
+  
+  let tooltipX = x + offset
+  let tooltipY = y + offset
+  
+  // Prevent tooltip from going off the right edge
+  if (tooltipX + tooltipWidth > window.innerWidth) {
+    tooltipX = x - tooltipWidth - offset
+  }
+  
+  // Prevent tooltip from going off the bottom edge
+  if (tooltipY + tooltipHeight > window.innerHeight) {
+    tooltipY = y - tooltipHeight - offset
+  }
+  
+  // Prevent tooltip from going off the left edge
+  if (tooltipX < 0) {
+    tooltipX = 10
+  }
+  
+  // Prevent tooltip from going off the top edge
+  if (tooltipY < 0) {
+    tooltipY = 10
+  }
+
+  const tooltipContent = (
     <div
-      className="stats-tooltip"
+      className="unified-tooltip"
       style={{
         position: 'fixed',
-        left: x + 15,
-        top: y,
+        left: `${tooltipX}px`,
+        top: `${tooltipY}px`,
         background: 'white',
         border: '1px solid #ccc',
         borderRadius: 8,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
         padding: '12px 16px',
-        zIndex: 1000,
-        pointerEvents: 'none',
+        zIndex: 9999,
+        pointerEvents: isChart ? 'auto' : 'none',
         minWidth: 240,
+        transition: 'all 0.15s ease-out',
       }}
     >
-      <div style={{ fontWeight: 600, marginBottom: 10, fontSize: 14 }}>{label}</div>
-      
-      <div style={{ marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid #eee' }}>
-        <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 4, color: '#667eea' }}>India</div>
-        <div style={{ fontSize: 13 }}>
-          <b>${indiaValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</b>
-        </div>
+      <p className="label" style={{ fontWeight: 600, marginBottom: 10, fontSize: 14, margin: 0 }}>
+        {name}
+      </p>
+      <p className="value" style={{ marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid #eee', margin: 0, padding: '0 0 8px 0' }}>
+        <b>${value?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</b> (Overall Average)
+      </p>
+      <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 4, color: '#667eea' }}>
+        India Average
       </div>
-      
-      <div>
-        <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 4, color: '#f5576c' }}>USA</div>
-        <div style={{ fontSize: 13 }}>
-          <b>${usValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</b>
-        </div>
+      <p style={{ fontSize: 13, margin: '0 0 8px 0' }}>
+        <b>${indiaAvg?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</b>
+      </p>
+      <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 4, color: '#f5576c' }}>
+        USA Average
       </div>
+      <p style={{ fontSize: 13, margin: 0 }}>
+        <b>${usAvg?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</b>
+      </p>
     </div>
   )
+
+  // For chart tooltips, render directly. For stats tooltips, use portal to render at body level
+  if (isChart) {
+    return tooltipContent
+  }
+
+  return createPortal(tooltipContent, document.body)
 }
 
 function BarGraph({ data, onNavigateToMonthly }) {
@@ -198,9 +240,10 @@ function BarGraph({ data, onNavigateToMonthly }) {
     visible: false,
     x: 0,
     y: 0,
-    indiaValue: 0,
-    usValue: 0,
-    label: '',
+    name: '',
+    value: 0,
+    indiaAvg: 0,
+    usAvg: 0,
   })
 
   // Debug: Check if data.rows exists
@@ -241,31 +284,20 @@ function BarGraph({ data, onNavigateToMonthly }) {
   ]
 
   const colors = ['#667eea', '#f5576c']
-
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const dataType = payload[0].payload.name.includes('Baseline') ? 'projected' : 'actual'
       const regionTotals = getRegionTotals(data.rows, dataType)
       
       return (
-        <div className="custom-tooltip">
-          <p className="label">{payload[0].payload.name}</p>
-          <p className="value" style={{ marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid #eee' }}>
-            <b>${payload[0].value.toFixed(2)}</b> (Overall Average)
-          </p>
-          <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 4, color: '#667eea' }}>
-            India Average
-          </div>
-          <p style={{ fontSize: 13, margin: '0 0 8px 0' }}>
-            <b>${regionTotals.indiaAvg.toFixed(2)}</b>
-          </p>
-          <div style={{ fontSize: 12, fontWeight: 500, marginBottom: 4, color: '#f5576c' }}>
-            USA Average
-          </div>
-          <p style={{ fontSize: 13, margin: 0 }}>
-            <b>${regionTotals.usAvg.toFixed(2)}</b>
-          </p>
-        </div>
+        <UnifiedTooltip
+          visible={true}
+          isChart={true}
+          name={payload[0].payload.name}
+          value={payload[0].value}
+          indiaAvg={regionTotals.indiaAvg}
+          usAvg={regionTotals.usAvg}
+        />
       )
     }
     return null
@@ -273,59 +305,68 @@ function BarGraph({ data, onNavigateToMonthly }) {
 
   return (
     <div className="bar-graph-container" onClick={onNavigateToMonthly}>
-      <div className="stats-panel">
-        <div
+      <div className="stats-panel">        <div
           className="stat-box"
           onMouseEnter={e => {
             console.log('🖱️ Baseline Rate hover - data.rows:', data.rows ? data.rows.length : 'missing')
             const regionTotals = getRegionTotals(data.rows, 'projected')
             console.log('📊 Region totals for projected:', regionTotals)
+            const rect = e.currentTarget.getBoundingClientRect()
+            // Position tooltip to the right of the stat box
             setTooltip({
               visible: true,
-              x: e.clientX,
-              y: e.clientY,
-              indiaValue: regionTotals.indiaAvg,
-              usValue: regionTotals.usAvg,
-              label: 'India/US Average Baseline Rate',
+              x: rect.right,
+              y: rect.top + (rect.height / 2),
+              name: 'Baseline Rate',
+              value: data.monthlyRateAverage,
+              indiaAvg: regionTotals.indiaAvg,
+              usAvg: regionTotals.usAvg,
             })
           }}
-          onMouseMove={e => setTooltip(t => ({ ...t, x: e.clientX, y: e.clientY }))}
+          onMouseMove={e => {
+            const rect = e.currentTarget.getBoundingClientRect()
+            setTooltip(t => ({ ...t, x: rect.right, y: rect.top + (rect.height / 2) }))
+          }}
           onMouseLeave={() => setTooltip(t => ({ ...t, visible: false }))}
           style={{ position: 'relative' }}
         >
           <h3>Baseline Rate</h3>
-          <p className="stat-value">${data.monthlyRateAverage.toFixed(2)}</p>
-          <p className="stat-label">Average</p>
-         {/* <p className="stat-detail">Total: ${data.monthlyRateTotal.toFixed(2)}</p>*/}
+          <p className="stat-value">${data.monthlyRateTotal.toFixed(2)}</p>
+          <p className="stat-label">Total</p>
+         {/* <p className="stat-detail">Average:${data.monthlyRateAverage.toFixed(2)} </p>*/}
           <p className="stat-detail">Count: {data.monthlyRateCount}</p>
-        </div>
-
-        <div
+        </div>        <div
           className="stat-box"
           onMouseEnter={e => {
             console.log('🖱️ Monthly Burn Rate hover - data.rows:', data.rows ? data.rows.length : 'missing')
             const regionTotals = getRegionTotals(data.rows, 'actual')
             console.log('📊 Region totals for actual:', regionTotals)
+            const rect = e.currentTarget.getBoundingClientRect()
+            // Position tooltip to the right of the stat box
             setTooltip({
               visible: true,
-              x: e.clientX,
-              y: e.clientY,
-              indiaValue: regionTotals.indiaAvg,
-              usValue: regionTotals.usAvg,
-              label: 'India/US Average Monthly Burn Rate',
+              x: rect.right,
+              y: rect.top + (rect.height / 2),
+              name: 'Monthly Burn Rate',
+              value: data.actualRateAverage,
+              indiaAvg: regionTotals.indiaAvg,
+              usAvg: regionTotals.usAvg,
             })
           }}
-          onMouseMove={e => setTooltip(t => ({ ...t, x: e.clientX, y: e.clientY }))}
+          onMouseMove={e => {
+            const rect = e.currentTarget.getBoundingClientRect()
+            setTooltip(t => ({ ...t, x: rect.right, y: rect.top + (rect.height / 2) }))
+          }}
           onMouseLeave={() => setTooltip(t => ({ ...t, visible: false }))}
           style={{ position: 'relative' }}
         >
           <h3>Monthly Burn Rate</h3>
-          <p className="stat-value">${data.actualRateAverage.toFixed(2)}</p>
-          <p className="stat-label">Average</p>
-         {/* <p className="stat-detail">Total: ${data.actualRateTotal.toFixed(2)}</p>*/}
+          <p className="stat-value"> ${data.actualRateTotal.toFixed(2)}</p>
+          <p className="stat-label">Total</p>
+         {/* <p className="stat-detail">Average:${data.actualRateAverage.toFixed(2)}</p>*/}
           <p className="stat-detail">Count: {data.actualRateCount}</p>
         </div>
-        <StatsTooltip {...tooltip} />
+        <UnifiedTooltip {...tooltip} />
       </div>
 
       <div className="graph-section">

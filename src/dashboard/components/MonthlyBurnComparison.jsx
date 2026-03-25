@@ -25,17 +25,8 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // Log incoming data
-  console.log('📋 MonthlyBurnComparison received overallData:', {
-    hasOverallData: !!overallData,
-    overallDataKeys: overallData ? Object.keys(overallData) : 'undefined',
-    hasRows: overallData?.rows ? true : false,
-    rowsLength: overallData?.rows?.length || 0
-  });
-
   const targetColumns = ['Tower', 'Location', 'Country', 'ACT/PCT', 'Verizon Level Mapping', 'Classification', 'Cognizant Designation', 'ESA Id', 'Service Line']
 
-  // Load Excel data when custom view is selected
   useEffect(() => {
     if (currentView === 'custom' && !excelData) {
       loadExcelData()
@@ -59,8 +50,7 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
       const jsonData = XLSX.utils.sheet_to_json(worksheet)
 
       setExcelData(jsonData)
-      
-      // Get available columns
+
       const columnKeys = Object.keys(jsonData[0])
       const columns = []
       targetColumns.forEach((targetCol) => {
@@ -72,7 +62,6 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
         }
       })
       setAvailableColumns(columns)
-      
       setLoading(false)
     } catch (err) {
       console.error('Error loading Excel data:', err)
@@ -141,50 +130,24 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
 
     columnKeys.forEach(key => {
       const lowerKey = key.toLowerCase().trim()
-      
-      // Match Projected Rate column
-      if (lowerKey.includes('projected') && lowerKey.includes('rate')) {
-        projectedRateKey = key
-      }
-      
-      // Match Monthly Rate column (fallback if no Projected Rate)
-      if (lowerKey.includes('monthly') && lowerKey.includes('rate')) {
-        monthlyRateKey = key
-      }
-      
-      // Match Actual Rate column
-      if (lowerKey.includes('actual') && lowerKey.includes('rate')) {
-        actualRateKey = key
-      }
+      if (lowerKey.includes('projected') && lowerKey.includes('rate')) projectedRateKey = key
+      if (lowerKey.includes('monthly') && lowerKey.includes('rate')) monthlyRateKey = key
+      if (lowerKey.includes('actual') && lowerKey.includes('rate')) actualRateKey = key
     })
 
-    // Use projected rate if available, otherwise use monthly rate
     const rateKey = projectedRateKey || monthlyRateKey
 
-    let projectedRateTotal = 0
-    let projectedRateCount = 0
-    let actualRateTotal = 0
-    let actualRateCount = 0
+    let projectedRateTotal = 0, projectedRateCount = 0
+    let actualRateTotal = 0, actualRateCount = 0
 
     filteredRows.forEach(row => {
-      if (rateKey && row[rateKey] !== undefined && row[rateKey] !== null && row[rateKey] !== '') {
-        let valueStr = String(row[rateKey]).replace(/[$,\s]/g, '').trim()
-        const rate = parseFloat(valueStr)
-        
-        if (!isNaN(rate) && isFinite(rate)) {
-          projectedRateTotal += rate
-          projectedRateCount++
-        }
+      if (rateKey && row[rateKey] != null && row[rateKey] !== '') {
+        const rate = parseFloat(String(row[rateKey]).replace(/[$,\s]/g, '').trim())
+        if (!isNaN(rate) && isFinite(rate)) { projectedRateTotal += rate; projectedRateCount++ }
       }
-
-      if (actualRateKey && row[actualRateKey] !== undefined && row[actualRateKey] !== null && row[actualRateKey] !== '') {
-        let valueStr = String(row[actualRateKey]).replace(/[$,\s]/g, '').trim()
-        const actualRate = parseFloat(valueStr)
-        
-        if (!isNaN(actualRate) && isFinite(actualRate)) {
-          actualRateTotal += actualRate
-          actualRateCount++
-        }
+      if (actualRateKey && row[actualRateKey] != null && row[actualRateKey] !== '') {
+        const actualRate = parseFloat(String(row[actualRateKey]).replace(/[$,\s]/g, '').trim())
+        if (!isNaN(actualRate) && isFinite(actualRate)) { actualRateTotal += actualRate; actualRateCount++ }
       }
     })
 
@@ -193,8 +156,8 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
       monthlyRateTotal: projectedRateTotal,
       monthlyRateCount: projectedRateCount,
       actualRateAverage: actualRateCount > 0 ? actualRateTotal / actualRateCount : 0,
-      actualRateTotal: actualRateTotal,
-      actualRateCount: actualRateCount,
+      actualRateTotal,
+      actualRateCount,
       recordsMatched: filteredRows.length
     }
   }
@@ -203,7 +166,7 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
     <div className="monthly-burn-comparison-container">
       <div className="view-selector">
         <label htmlFor="view-dropdown" className="selector-label">Select View:</label>
-        <select 
+        <select
           id="view-dropdown"
           className="view-dropdown"
           value={currentView}
@@ -217,17 +180,12 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
 
       {currentView === 'overall' && overallData && <BarGraph data={overallData} onNavigateToMonthly={onNavigateToMonthly} />}
       {currentView === 'individual' && individualData && <IndividualBurn data={individualData} />}
-      
+
       {currentView === 'custom' && (
         <div className="custom-view-container">
-          {loading && (
-            <div className="loading-message">Loading Excel data...</div>
-          )}
-          
-          {error && (
-            <div className="error-message">{error}</div>
-          )}
-          
+          {loading && <div className="loading-message">Loading Excel data...</div>}
+          {error && <div className="error-message">{error}</div>}
+
           {!loading && !error && (
             <>
               <div className="custom-filters-wrapper">
@@ -241,9 +199,7 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
                   >
                     <option value="">Select Parameter</option>
                     {availableColumns.map((col) => (
-                      <option key={col.actual} value={col.display}>
-                        {col.display}
-                      </option>
+                      <option key={col.actual} value={col.display}>{col.display}</option>
                     ))}
                   </select>
                   {availableColumns.length === 0 && (
@@ -262,9 +218,7 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
                   >
                     <option value="">Select Value</option>
                     {availableValues.map((val) => (
-                      <option key={val} value={val}>
-                        {val}
-                      </option>
+                      <option key={val} value={val}>{val}</option>
                     ))}
                   </select>
                   {selectedParameter && availableValues.length > 0 && (
@@ -296,7 +250,7 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
                     <h2>Comparison Graph - {selectedParameter}: {selectedValue}</h2>
                     <div className="recharts-wrapper">
                       <ResponsiveContainer width="100%" height={400}>
-                        <BarChart 
+                        <BarChart
                           data={[
                             { name: 'Projected Rate', value: parseFloat(filteredData.monthlyRateAverage.toFixed(2)) },
                             { name: 'Actual Rate', value: parseFloat(filteredData.actualRateAverage.toFixed(2)) }
@@ -304,21 +258,9 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
                           margin={{ top: 20, right: 30, left: 0, bottom: 60 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" stroke="#ecf0f1" />
-                          <XAxis 
-                            dataKey="name" 
-                            tick={{ fill: '#2c3e50', fontSize: 14, fontWeight: 500 }}
-                            angle={-15}
-                            textAnchor="end"
-                            height={80}
-                          />
-                          <YAxis 
-                            tick={{ fill: '#2c3e50', fontSize: 14 }}
-                            label={{ value: 'Amount ($)', angle: -90, position: 'insideLeft', fill: '#2c3e50' }}
-                          />
-                          <Tooltip 
-                            contentStyle={{ backgroundColor: 'white', border: '1px solid #ecf0f1', borderRadius: '4px' }}
-                            formatter={(value) => `$${value.toFixed(2)}`}
-                          />
+                          <XAxis dataKey="name" tick={{ fill: '#2c3e50', fontSize: 14, fontWeight: 500 }} angle={-15} textAnchor="end" height={80} />
+                          <YAxis tick={{ fill: '#2c3e50', fontSize: 14 }} label={{ value: 'Amount ($)', angle: -90, position: 'insideLeft', fill: '#2c3e50' }} />
+                          <Tooltip contentStyle={{ backgroundColor: 'white', border: '1px solid #ecf0f1', borderRadius: '4px' }} formatter={(value) => `$${value.toFixed(2)}`} />
                           <Legend wrapperStyle={{ paddingTop: '20px', display: 'none' }} iconType="square" />
                           <Bar dataKey="value" name="Average Rate" fill="#667eea" radius={[8, 8, 0, 0]}>
                             <Cell fill="#667eea" />
@@ -332,15 +274,11 @@ function MonthlyBurnComparison({ overallData, individualData, onNavigateToMonthl
               )}
 
               {!filteredData && selectedParameter && (
-                <div className="no-selection">
-                  <p>Select a value to see filtered results and comparison graph</p>
-                </div>
+                <div className="no-selection"><p>Select a value to see filtered results and comparison graph</p></div>
               )}
 
               {!selectedParameter && (
-                <div className="no-selection">
-                  <p>Select a parameter to get started</p>
-                </div>
+                <div className="no-selection"><p>Select a parameter to get started</p></div>
               )}
             </>
           )}

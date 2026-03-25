@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import './Login.css';
+import ForgotPassword from './ForgotPassword';
+import SignUp from './SignUp';
 
 const CREDENTIALS = { username: 'admin', password: 'admin' };
 
@@ -8,6 +10,7 @@ function Login({ onLogin }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [page, setPage] = useState('login');
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -18,9 +21,8 @@ function Login({ onLogin }) {
     }
   };
 
-  const handleLinkClick = (e) => {
-    e.preventDefault();
-  };
+  if (page === 'forgot') return <ForgotPassword onBack={() => setPage('login')} />;
+  if (page === 'signup') return <SignUp onBack={() => setPage('login')} />;
 
   return (
     <div className="login-container">
@@ -52,9 +54,9 @@ function Login({ onLogin }) {
           <button type="submit" className="login-btn">Login</button>
         </form>
         <div className="login-links">
-          <button type="button" onClick={handleLinkClick} className="forgot-password-link">Forgot Password?</button>
+          <button type="button" onClick={() => setPage('forgot')} className="forgot-password-link">Forgot Password?</button>
           <span className="signup-separator">|</span>
-          <button type="button" onClick={handleLinkClick} className="signup-link">Sign Up</button>
+          <button type="button" onClick={() => setPage('signup')} className="signup-link">Sign Up</button>
         </div>
       </div>
     </div>

@@ -95,26 +95,50 @@
 .login-links {
   display: flex;
   justify-content: center;
-  margin-top: 16px;
-  font-size: 1rem;
+  align-items: center;
+  margin-top: 20px;
+  font-size: 0.95rem;
+  gap: 4px;
 }
 
 .forgot-password-link,
 .signup-link {
-  color: #1976d2;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #667eea;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
   text-decoration: none;
-  margin: 0 8px;
-  font-weight: 500;
-  transition: color 0.2s;
+  transition: color 0.2s ease;
+  font-family: inherit;
 }
 
 .forgot-password-link:hover,
 .signup-link:hover {
-  color: #1565c0;
+  color: #764ba2;
   text-decoration: underline;
 }
 
 .signup-separator {
-  color: #888;
-  margin: 0 4px;
+  color: #ccc;
+  margin: 0 8px;
+  font-weight: 300;
+}
+
+.login-card--wide {
+  max-width: 420px;
+}
+
+.auth-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.auth-subtitle {
+  color: #777;
+  font-size: 13.5px;
+  margin-bottom: 24px;
+  line-height: 1.5;
 }

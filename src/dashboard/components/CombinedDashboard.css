@@ -13,6 +13,21 @@
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tabs-left {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tabs-right {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-left: auto;
 }
 
 .tab-btn {
@@ -38,6 +53,19 @@
   color: white;
   border-color: transparent;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.tab-btn.back-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.tab-btn.back-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+  border-color: transparent;
 }
 
 .combined-container {

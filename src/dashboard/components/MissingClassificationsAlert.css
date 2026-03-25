@@ -62,22 +62,6 @@
   font-size: 0.9rem;
 }
 
-.alert-table-wrapper {
-  overflow-y: auto;
-  overflow-x: hidden;
-  flex: 1;
-  min-height: 300px;
-  max-height: 100%;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-  background: white;
-}
-
-.alert-table-wrapper.scrollable {
-  overflow: hidden;
-  border-radius: 8px;
-}
-
 .alert-table {
   width: 100%;
   border-collapse: collapse;
@@ -385,10 +369,6 @@
   font-weight: 500;
 }
 
-.no-data-message p:last-child {
-  margin-top: 8px;
-}
-
 /* Fixed Height Table Container with Scroll */
 .alert-table-wrapper {
   max-height: 180px;
@@ -539,12 +519,6 @@
 
 .alert-table-wrapper::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-}
-
-/* Firefox Scrollbar */
-.alert-table-wrapper {
-  scrollbar-color: #667eea #f1f1f1;
-  scrollbar-width: thin;
 }
 
 /* Responsive adjustments */
