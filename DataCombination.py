@@ -13,17 +13,15 @@ def combine_excel_sheets(input_file, output_file):
     # Load the input workbook - use data_only=True to get calculated values instead of formulas
     wb_input = openpyxl.load_workbook(input_file, data_only=True)
     
-    # Get all sheet names, skip the first one (legend) and hidden sheets
+    # Get all sheet names, skip hidden sheets and sheets named "legend"
     sheet_names = []
     for sheet_name in wb_input.sheetnames:
         ws = wb_input[sheet_name]
         # Skip hidden sheets (sheet_state will be 'hidden')
         if ws.sheet_state != 'hidden':
-            sheet_names.append(sheet_name)
-    
-    # Skip the first sheet (legend) if there are more sheets
-    if len(sheet_names) > 1:
-        sheet_names = sheet_names[1:]
+            # Skip sheets named "legend" (case-insensitive)
+            if sheet_name.lower() != 'legend':
+                sheet_names.append(sheet_name)
     
     print(f"Processing sheets: {sheet_names}")
     
@@ -51,6 +49,8 @@ def combine_excel_sheets(input_file, output_file):
     
     # Process each sheet
     current_row = 2
+    india_sheets_count = 0
+    usa_sheets_count = 0
     
     for sheet_name in sheet_names:
         ws_input = wb_input[sheet_name]
@@ -62,8 +62,10 @@ def combine_excel_sheets(input_file, output_file):
         # Determine country based on sheet name
         if x and x[0].isdigit():
             country = "India"
+            india_sheets_count += 1
         elif x and x[0].isalpha():
             country = "USA"
+            usa_sheets_count += 1
         else:
             continue
         
@@ -234,6 +236,10 @@ def combine_excel_sheets(input_file, output_file):
     
     # Save output workbook
     wb_output.save(output_file)
+    print(f"\n--- Processing Summary ---")
+    print(f"India Sheets Processed: {india_sheets_count}")
+    print(f"USA Sheets Processed: {usa_sheets_count}")
+    print(f"Total Rows Combined: {current_row - 2}")
     print(f"\nCombined data saved to {output_file}")
 
 if __name__ == "__main__":
