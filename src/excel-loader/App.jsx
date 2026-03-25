@@ -1287,6 +1287,8 @@ function App({ onLogout }) {
                   individualData={dashboardData.individual}
                   resourceFlagsData={dashboardData.resourceFlags}
                   onNavigateBack={() => setShowDashboard(false)}
+                  onExportExcel={exportToExcel}
+                  onExportPDF={exportToPDF}
                 />
               )}
             </div>
