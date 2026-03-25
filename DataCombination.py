@@ -99,6 +99,10 @@ def combine_excel_sheets(input_file, output_file):
         
         # Process data rows (starting from the row after the header row)
         for row in range(header_row_number + 1, ws_input.max_row + 1):
+            # Skip hidden rows
+            if ws_input.row_dimensions[row].hidden:
+                continue
+            
             # Check if Name column has value (skip if empty)
             name_value = None
             name_col_idx = None
@@ -230,7 +234,7 @@ def combine_excel_sheets(input_file, output_file):
     
     # Save output workbook
     wb_output.save(output_file)
-    print(f"\n✓ Combined data saved to {output_file}")
+    print(f"\nCombined data saved to {output_file}")
 
 if __name__ == "__main__":
     input_file = "public/Home & Marketing, SOR - Burn 2026.xlsx"

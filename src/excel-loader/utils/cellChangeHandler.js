@@ -15,12 +15,25 @@ export const handleCellChange = (
   const isTimesheetColumn = (headerLower.includes('timesheet') || (headerLower.includes('hours') && !headerLower.includes('hourly')));
   
   if (isSkillSetColumn) {
-    const currentValue = updatedData[rowIndex][cellIndex] || '';
-    const skillValues = currentValue.split(',').map(s => s.trim()).filter(Boolean);
+    // Check if this is a removal operation (marked with ___REMOVE___)
+    const isRemovalOperation = newValue && newValue.startsWith('___REMOVE___');
+    const actualValue = isRemovalOperation ? newValue.replace('___REMOVE___', '') : newValue;
     
-    if (newValue && !skillValues.includes(newValue)) {
-      skillValues.push(newValue);
-      updatedData[rowIndex][cellIndex] = skillValues.join(', ');
+    if (isRemovalOperation) {
+      // Direct replacement - this is a removal/filtering operation
+      updatedData[rowIndex][cellIndex] = actualValue;
+    } else if (actualValue) {
+      // This is adding a new skill
+      const currentValue = updatedData[rowIndex][cellIndex] || '';
+      const skillValues = currentValue.split(',').map(s => s.trim()).filter(Boolean);
+      
+      if (!skillValues.includes(actualValue)) {
+        skillValues.push(actualValue);
+        updatedData[rowIndex][cellIndex] = skillValues.join(', ');
+      }
+    } else {
+      // Empty value - clear the cell
+      updatedData[rowIndex][cellIndex] = '';
     }
   } else {
     updatedData[rowIndex][cellIndex] = newValue;

@@ -780,6 +780,31 @@ body {
   box-shadow: 0 3px 8px rgba(102, 126, 234, 0.4);
 }
 
+.skill-remove-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0 4px 0 6px;
+  margin-left: 4px;
+  line-height: 1;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.skill-remove-btn:hover {
+  transform: scale(1.2);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+.skill-remove-btn:active {
+  transform: scale(0.95);
+}
+
 .placeholder {
   color: #999;
   font-style: italic;

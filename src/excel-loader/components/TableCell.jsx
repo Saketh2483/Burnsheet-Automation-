@@ -50,13 +50,33 @@ export const TableCell = ({
     const cellKey = `${rowIndex}-${cellIndex}`;
     const isExpanded = expandedSkillCell === cellKey;
     
+    const handleRemoveSkill = (skillToRemove) => {
+      const skills = cell.split(',').map(s => s.trim());
+      const updatedSkills = skills.filter(s => s !== skillToRemove);
+      const updatedValue = updatedSkills.length > 0 ? updatedSkills.join(', ') : '';
+      // Mark this as a removal operation by using a special prefix
+      handleCellChange(rowIndex, cellIndex, '___REMOVE___' + updatedValue);
+    };
+    
     return (
       <td key={`cell-${rowIndex}-${cellIndex}`} className={`data-cell skill-set-cell ${alignmentClass}`} data-column={headerName}>
         <div className="skill-set-display">
           <div className="skill-set-values">
             {cell ? (
               <>
-                {cell.split(',').map((skill, idx) => <span key={`skill-${idx}-${skill.trim()}`} className="skill-tag">{skill.trim()}</span>)}
+                {cell.split(',').map((skill, idx) => (
+                  <span key={`skill-${idx}-${skill.trim()}`} className="skill-tag">
+                    {skill.trim()}
+                    <button 
+                      className="skill-remove-btn" 
+                      onClick={() => handleRemoveSkill(skill.trim())}
+                      title="Remove this skill"
+                      type="button"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
                 <span className="skill-toggle-plus" onClick={() => setExpandedSkillCell(isExpanded ? null : cellKey)} title="Click to add more skills">
                   {isExpanded ? '−' : '+'}
                 </span>
