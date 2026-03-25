@@ -3,7 +3,9 @@ import './MissingClassificationsAlert.css'
 
 function MissingClassificationsAlert({ data }) {
   const [editingRows, setEditingRows] = useState({})
-  const [displayedRows, setDisplayedRows] = useState(data?.missingRows || [])
+  
+  // Memoize displayedRows to prevent it from changing on every render
+  const displayedRows = useMemo(() => data?.missingRows || [], [data?.missingRows])
 
   // Separate missing rows by country
   const { indiaRows, usaRows } = useMemo(() => {

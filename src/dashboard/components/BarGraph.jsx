@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   BarChart,
@@ -7,7 +7,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   Cell,
 } from 'recharts'
@@ -122,7 +121,7 @@ function getRegionTotals(rows, type = 'projected') {
                     country === 'united states' ||
                     country === 'united states of america' ||
                     country.includes('usa') ||
-                    country.includes('us') && !country.includes('india') ||
+                    (country.includes('us') && !country.includes('india')) ||
                     country.startsWith('usa') || 
                     country.startsWith('us ') ||
                     country.startsWith('united');
