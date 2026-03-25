@@ -16,28 +16,26 @@ export const BurnIndicator = ({ row, headers, projectedRate = 100 }) => {
   
   // Get Actual Rate value (in $)
   const actualRateValue = indices.actualRate >= 0 ? parseFloat(row[indices.actualRate]) || 0 : 0;
-  
-  // Calculate burn percentage (Actual Rate / Projected Rate * 100)
+    // Calculate burn percentage (Actual Rate / Projected Rate * 100)
   // If projected rate is 0 or missing, show 0%
   const burnPercentage = projectedRateValue > 0 ? (actualRateValue / projectedRateValue) * 100 : 0;
   
   // Determine segments for the bar
-  let actualPercent = Math.min(burnPercentage, 100); // Green segment
-  let projectedPercent = 0; // Yellow segment
-  let overburnPercent = 0; // Red segment
-  let statusColor = '#10b981'; // Green by default
+  let actualPercent = 0;
+  let projectedPercent = 0;
+  let overburnPercent = 0;
+  let statusColor = '#22c55e'; // Green by default
   
-  if (burnPercentage > 100) {
+  if (burnPercentage <= 100) {
+    // Normal case: Green for actual, Yellow for remaining projected
+    actualPercent = burnPercentage;
+    projectedPercent = 100 - burnPercentage;
+    statusColor = '#22c55e'; // Green
+  } else {
+    // Overburn case: Green fills 100%, Red shows the excess
     actualPercent = 100;
-    const excess = burnPercentage - 100;
-    if (excess <= 30) {
-      projectedPercent = excess;
-      statusColor = '#fbbf24'; // Yellow
-    } else {
-      projectedPercent = 30;
-      overburnPercent = excess - 30;
-      statusColor = '#ef4444'; // Red
-    }
+    overburnPercent = Math.min(burnPercentage - 100, 100);
+    statusColor = '#ef4444'; // Red
   }
 
   return (
