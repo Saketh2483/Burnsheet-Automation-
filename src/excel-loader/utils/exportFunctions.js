@@ -209,7 +209,7 @@ export const exportToPDF = async (
     const usableWidth = pageWidth - margin * 2;
 
     const addPageHeader = (title, subtitle) => {
-      doc.setFillColor(220, 0, 0);
+      doc.setFillColor(102, 126, 234);
       doc.rect(0, 0, pageWidth, 40, 'F');
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
@@ -294,7 +294,7 @@ export const exportToPDF = async (
           lineColor: [220, 220, 220],
           lineWidth: 0.3
         },
-        headStyles: { fillColor: [220, 0, 0], textColor: 255, fontStyle: 'bold', fontSize: 6.5 },
+        headStyles: { fillColor: [102, 126, 234], textColor: 255, fontStyle: 'bold', fontSize: 6.5 },
         alternateRowStyles: { fillColor: [248, 248, 248] },
         columnStyles: Object.fromEntries(scaledWidths.map((w, idx) => [idx, { cellWidth: w }])),
         margin: { left: margin, right: margin },
