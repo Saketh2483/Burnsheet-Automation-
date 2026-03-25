@@ -106,10 +106,10 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData, onN
         </div>
 
         <div className="tabs-right">
-          <button className="tab-btn back-btn" onClick={onExportExcel} title="Export dashboard data as Excel">
+          <button className="tab-btn back-btn excel-btn" onClick={onExportExcel} title="Export dashboard data as Excel">
             📊 Export
           </button>
-          <button className="tab-btn back-btn" onClick={onExportPDF} title="Export dashboard data as PDF">
+          <button className="tab-btn back-btn pdf-btn" onClick={onExportPDF} title="Export dashboard data as PDF">
             📄 PDF
           </button>
         </div>

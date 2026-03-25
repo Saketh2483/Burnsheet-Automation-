@@ -1,4 +1,5 @@
 import React from 'react';
+import { BurnIndicator } from './BurnIndicator';
 
 const isValidEMPID = (value) => /^\d+$/.test(value);
 
@@ -20,6 +21,16 @@ export const TableCell = ({
   const isEMPIDColumn = headerLower.includes('empid');
   const isInvalidEMPID = isEMPIDColumn && cell && !isValidEMPID(cell);
   const alignmentClass = 'left-align';
+  
+  // Check if this is a burn indicator column (virtual column marker)
+  const isBurnIndicatorColumn = headerLower.includes('burn indicator');
+  if (isBurnIndicatorColumn) {
+    return (
+      <td key={`cell-${rowIndex}-${cellIndex}`} className="data-cell burn-indicator-cell" data-column={headerName}>
+        <BurnIndicator row={row} headers={headers} projectedRate={100} />
+      </td>
+    );
+  }
 
   // Location dropdown
   if (headerLower.includes('location')) {

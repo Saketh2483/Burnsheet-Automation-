@@ -1423,7 +1423,232 @@ td[title] {
   outline: none;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15), 0 2px 8px rgba(102, 126, 234, 0.25);
 }
+
 /* Add spacing below the dollar value box */
 .header-top {
   margin-bottom: 12px;
+}
+
+/* Burn Indicator Column Header */
+.data-table thead th.burn-indicator-header {
+  text-align: center;
+  min-width: 280px;
+  width: 280px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-weight: 700;
+}
+
+/* Burn Indicator Cell */
+.data-cell.burn-indicator-cell {
+  padding: 8px 10px;
+  vertical-align: middle;
+  height: 56px;
+  display: table-cell;
+  background-color: #fafbfc;
+  border-right: 1px solid #e5e7eb;
+  min-width: 280px;
+  width: 280px;
+  text-align: left;
+}
+
+.data-cell.burn-indicator-cell:hover {
+  background-color: #f0f4ff;
+  transition: background-color 0.2s ease;
+}
+
+/* Burn Indicator Container inside cell */
+.burn-indicator-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 0 5px;
+  min-height: 40px;
+}
+
+.burn-bar-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 120px;
+}
+
+.burn-bar-background {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  background-color: #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #d1d5db;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.burn-bar-fill {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.3s ease, background-color 0.2s ease;
+  border-radius: 9px;
+  min-width: 20px;
+}
+
+/* Burn Status Colors */
+.burn-status-under {
+  background: linear-gradient(90deg, #3b82f6, #1e40af);
+}
+
+.burn-status-warning {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+.burn-status-normal {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.burn-status-caution {
+  background: linear-gradient(90deg, #f97316, #ea580c);
+}
+
+.burn-status-critical {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.burn-percentage {
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+/* Projected marker line at 100% */
+.burn-projected-marker {
+  position: absolute;
+  left: calc(100% - 0.5px);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: rgba(0, 0, 0, 0.4);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.5);
+  z-index: 10;
+}
+
+.burn-status-label {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 2px 6px;
+  border-radius: 4px;
+  min-width: 65px;
+  text-align: center;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+.burn-status-label.burn-status-under {
+  background-color: #dbeafe;
+  color: #0c4a6e;
+}
+
+.burn-status-label.burn-status-warning {
+  background-color: #fef3c7;
+  color: #78350f;
+}
+
+.burn-status-label.burn-status-normal {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.burn-status-label.burn-status-caution {
+  background-color: #fed7aa;
+  color: #7c2d12;
+}
+
+.burn-status-label.burn-status-critical {
+  background-color: #fee2e2;
+  color: #7f1d1d;
+}
+
+/* Responsive adjustments for burn indicator */
+@media (max-width: 1200px) {
+  .data-table thead th.burn-indicator-header {
+    min-width: 240px;
+    width: 240px;
+  }
+
+  .data-cell.burn-indicator-cell {
+    min-width: 240px;
+    width: 240px;
+  }
+
+  .burn-indicator-container {
+    gap: 6px;
+    min-height: 36px;
+  }
+
+  .burn-bar-background {
+    height: 18px;
+  }
+
+  .burn-percentage {
+    font-size: 10px;
+  }
+
+  .burn-status-label {
+    font-size: 10px;
+    min-width: 60px;
+  }
+}
+
+@media (max-width: 768px) {
+  .data-table thead th.burn-indicator-header {
+    min-width: 200px;
+    width: 200px;
+  }
+
+  .data-cell.burn-indicator-cell {
+    min-width: 200px;
+    width: 200px;
+  }
+
+  .burn-indicator-container {
+    flex-direction: column;
+    gap: 4px;
+    min-height: auto;
+    padding: 4px 5px;
+  }
+
+  .burn-bar-wrapper {
+    min-width: 100px;
+  }
+
+  .burn-bar-background {
+    height: 16px;
+  }
+
+  .burn-percentage {
+    font-size: 9px;
+  }
+
+  .burn-status-label {
+    font-size: 9px;
+    min-width: auto;
+  }
+}
+
+/* Animation for active/hover state */
+.burn-bar-background:hover .burn-bar-fill {
+  filter: brightness(1.1);
+}
+
+/* Accessibility improvements */
+.burn-bar-background,
+.burn-status-label {
+  cursor: pointer;
 }

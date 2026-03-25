@@ -6,9 +6,10 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
-  min-height: 400px;
   width: 100%;
+  height: 100%;
   flex: 1;
+  box-sizing: border-box;
 }
 
 .alert-header {
@@ -371,12 +372,12 @@
 
 /* Fixed Height Table Container with Scroll */
 .alert-table-wrapper {
-  max-height: 180px;
+  max-height: 245px;
   overflow-y: auto;
   overflow-x: hidden;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
-  flex-shrink: 1;
+  flex-shrink: 0;
   box-sizing: border-box;
   width: 100%;
 }
@@ -521,22 +522,85 @@
   background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
 }
 
+/* Radar Chart Section */
+.mc-radar-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  padding: 20px 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mc-radar-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e3c72;
+  margin: 0;
+}
+
+/* Country Tabs */
+.mc-country-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.mc-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #555;
+}
+
+.mc-tab-btn:hover {
+  transform: translateY(-1px);
+}
+
+.mc-tab-count {
+  background: rgba(0,0,0,0.12);
+  border-radius: 12px;
+  padding: 1px 7px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.mc-india-btn.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.35);
+}
+
+.mc-india-btn.active .mc-tab-count {
+  background: rgba(255,255,255,0.25);
+}
+
+.mc-usa-btn.active {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.35);
+}
+
+.mc-usa-btn.active .mc-tab-count {
+  background: rgba(255,255,255,0.25);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .country-section {
-    padding: 15px;
-  }
-
-  .country-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .country-badge {
-    align-self: flex-start;
-  }
-
   .alert-table-wrapper {
     max-height: 150px;
     overflow-x: hidden;

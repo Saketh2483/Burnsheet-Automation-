@@ -1,0 +1,111 @@
+/* Burn Indicator Styles */
+
+.burn-indicator-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  padding: 0 5px;
+  min-height: 40px;
+}
+
+.burn-bar-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 120px;
+}
+
+.burn-bar-background {
+  position: relative;
+  width: 100%;
+  height: 24px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  display: flex;
+}
+
+.burn-bar-segment {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.3s ease;
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.burn-bar-segment:last-child {
+  border-right: none;
+}
+
+/* Burn Status Colors */
+.burn-bar-segment.actual-segment {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.burn-bar-segment.projected-segment {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+.burn-bar-segment.overburn-segment {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.burn-percentage-text {
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 55px;
+  text-align: right;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .burn-indicator-container {
+    gap: 10px;
+    min-height: 36px;
+  }
+  
+  .burn-bar-background {
+    height: 20px;
+  }
+  
+  .burn-percentage-text {
+    font-size: 12px;
+    min-width: 50px;
+  }
+}
+
+@media (max-width: 768px) {
+  .burn-indicator-container {
+    gap: 8px;
+    min-height: 32px;
+  }
+  
+  .burn-bar-background {
+    height: 18px;
+  }
+  
+  .burn-percentage-text {
+    font-size: 11px;
+    min-width: 45px;
+  }
+}
+
+/* Hover effects */
+.burn-bar-background:hover {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+}
+
+.burn-bar-segment {
+  cursor: pointer;
+}
+
+.burn-bar-segment:hover {
+  filter: brightness(1.1);
+}
