@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import MonthlyBurnComparison from './MonthlyBurnComparison'
 import ResourceFlags from './ResourceFlags'
 import MissingClassificationsAlert from './MissingClassificationsAlert'
-import HomeMarketingChart from './HomeMarketingChart'
 import Chatbot from './Chatbot'
 import './CombinedDashboard.css'
 
@@ -127,7 +126,6 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData, onN
             )}
           </div>
           <div className="dashboard-panel right-panel">
-            <HomeMarketingChart />
             <ResourceFlags data={resourceFlagsData} onNavigateToResourceFlags={() => setActiveTab('resources')} />
           </div>
         </div>
