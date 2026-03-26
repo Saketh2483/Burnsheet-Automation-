@@ -4,11 +4,11 @@ import ResourceFlags from './ResourceFlags'
 import MissingClassificationsAlert from './MissingClassificationsAlert'
 import Chatbot from './Chatbot'
 import './CombinedDashboard.css'
-
+ 
 function CombinedDashboard({ overallData, individualData, resourceFlagsData, onNavigateBack, onExportExcel, onExportPDF }) {
   const [activeTab, setActiveTab] = useState('combined')
   const [missingClassificationsData, setMissingClassificationsData] = useState(null)
-
+ 
   useEffect(() => {
     const loadMissingClassifications = async () => {
       try {
@@ -16,54 +16,46 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData, onN
         if (!response.ok) {
           throw new Error(`Failed to load Excel file: ${response.statusText}`)
         }
-
+ 
         const blob = await response.blob()
         const arrayBuffer = await blob.arrayBuffer()
-
+ 
         const XLSXModule = await import('xlsx')
         const XLSX = XLSXModule.default || XLSXModule
-
+ 
         const workbook = XLSX.read(arrayBuffer, { type: 'array' })
         const sheetName = workbook.SheetNames[0]
         const worksheet = workbook.Sheets[sheetName]
         const jsonData = XLSX.utils.sheet_to_json(worksheet)
-
+ 
         if (!jsonData || jsonData.length === 0) {
           setMissingClassificationsData({ missingRows: [], totalRows: 0, missingCount: 0, classificationKey: null })
           return
         }
-
+ 
         const columnKeys = Object.keys(jsonData[0])
         let classificationKey = null
-
+ 
+        // First, try to find exact Classification column
         for (const key of columnKeys) {
           if (key.toLowerCase().trim().includes('classification')) {
             classificationKey = key
             break
           }
         }
-
-        if (!classificationKey && columnKeys.length > 7) {
-          classificationKey = columnKeys[7]
-        }
-
+ 
+        // If not found, create a new one
         if (!classificationKey) {
-          for (const key of columnKeys) {
-            if (key.toLowerCase().trim() === 'key') {
-              classificationKey = key
-              break
+          console.warn('⚠️ Classification column not found. Creating a new one...')
+          classificationKey = 'Classification'
+          // Add Classification column to all rows
+          jsonData.forEach(row => {
+            if (!row[classificationKey]) {
+              row[classificationKey] = ''
             }
-          }
-        }
-
-        if (!classificationKey) {
-          setMissingClassificationsData({
-            missingRows: [], totalRows: jsonData.length, missingCount: 0, classificationKey: null,
-            message: `Classification column not found. Available columns: ${columnKeys.join(', ')}`
           })
-          return
         }
-
+ 
         const missingRows = []
         jsonData.forEach((row, rowIndex) => {
           const classification = row[classificationKey]
@@ -74,7 +66,7 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData, onN
             missingRows.push({ rowIndex, originalIndex: rowIndex + 2, ...row })
           }
         })
-
+ 
         setMissingClassificationsData({
           missingRows, totalRows: jsonData.length, missingCount: missingRows.length,
           classificationKey, jsonData, workbook, sheetName, XLSX
@@ -86,10 +78,10 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData, onN
         })
       }
     }
-
+ 
     loadMissingClassifications()
   }, [])
-
+ 
   return (
     <div className="combined-dashboard">
       <div className="dashboard-tabs">
@@ -104,7 +96,7 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData, onN
             🔥 Resource Burn
           </button>
         </div>
-
+ 
         <div className="tabs-right">
           <button className="tab-btn back-btn excel-btn" onClick={onExportExcel} title="Export dashboard data as Excel">
             📊 Export
@@ -114,7 +106,7 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData, onN
           </button>
         </div>
       </div>
-
+ 
       {activeTab === 'combined' && (
         <div className="combined-container">
           <div className="dashboard-panel left-panel">
@@ -130,13 +122,13 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData, onN
           </div>
         </div>
       )}
-
+ 
       {activeTab === 'monthly' && (
         <div className="full-dashboard">
           <MonthlyBurnComparison overallData={overallData} individualData={individualData} />
         </div>
       )}
-
+ 
       {activeTab === 'missing' && (
         <div className="full-dashboard">
           {missingClassificationsData && (
@@ -144,16 +136,16 @@ function CombinedDashboard({ overallData, individualData, resourceFlagsData, onN
           )}
         </div>
       )}
-
+ 
       {activeTab === 'resources' && (
         <div className="full-dashboard">
           <ResourceFlags data={resourceFlagsData} />
         </div>
       )}
-
+ 
       <Chatbot />
     </div>
   )
 }
-
+ 
 export default CombinedDashboard

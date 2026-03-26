@@ -1,15 +1,15 @@
 import { useState, useMemo } from 'react'
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import './MissingClassificationsAlert.css'
-
+ 
 function MissingClassificationsAlert({ data }) {
   const [editingRows, setEditingRows] = useState({})
   const [activeCountry, setActiveCountry] = useState('India')
-
+ 
   const missingRows = useMemo(() => {
     return data?.missingRows || []
   }, [data?.missingRows])
-
+ 
   const { indiaRows, usaRows } = useMemo(() => {
     const india = []
     const usa = []
@@ -20,7 +20,7 @@ function MissingClassificationsAlert({ data }) {
     })
     return { indiaRows: india, usaRows: usa }
   }, [missingRows])
-
+ 
   const radarData = useMemo(() => {
     const rows = data?.jsonData || []
     if (!rows.length) return []
@@ -48,20 +48,20 @@ function MissingClassificationsAlert({ data }) {
       .sort((a, b) => b.Actual - a.Actual)
       .slice(0, 8)
   }, [data])
-
+ 
   // Helper functions — defined before early returns
   const getEmpIdValue = (row, columnKey) => {
     const value = row[columnKey]
     if (!value || value === '' || value === 'undefined' || value === 'null') return '—'
     return String(value)
   }
-
+ 
   const getDisplayValue = (row, columnKey) => {
     const value = row[columnKey]
     if (!value || value === '' || value === 'undefined' || value === 'null') return '—'
     return String(value).substring(0, 30)
   }
-
+ 
   const findColumnKey = (row, searchTerms) => {
     const keys = Object.keys(row)
     for (const key of keys) {
@@ -72,18 +72,18 @@ function MissingClassificationsAlert({ data }) {
     }
     return null
   }
-
+ 
   const getNormalizedClassification = (input) => {
     if (!input || input.trim() === '') return ''
     return input.trim().split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ')
   }
-
+ 
   const handleEditChange = (rowIndex, newValue) => {
     setEditingRows(prev => ({ ...prev, [rowIndex]: newValue }))
   }
-
+ 
   const renderRadar = () => (
     <div className="mc-radar-card">
       <p className="mc-radar-title">POC Burn Rate</p>
@@ -102,7 +102,7 @@ function MissingClassificationsAlert({ data }) {
       </div>
     </div>
   )
-
+ 
   const renderTable = (rows, countryKey) => (
     rows.length > 0 ? (
       <div className="alert-table-wrapper">
@@ -152,8 +152,7 @@ function MissingClassificationsAlert({ data }) {
       </div>
     )
   )
-
-  // Early returns — renderRadar is defined above so safe to call
+ 
   if (data?.message) {
     return (
       <div className="missing-classifications-alert">
@@ -163,13 +162,19 @@ function MissingClassificationsAlert({ data }) {
         </div>
         <div style={{ padding: '20px', textAlign: 'center', color: '#d97706' }}>
           <p style={{ fontWeight: '500', marginBottom: '10px' }}>⚠️ {data.message}</p>
-          <p style={{ fontSize: '12px', color: '#999' }}>Please verify your Excel file structure.</p>
+          {data.message.includes('Classification') ? (
+            <p style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
+              Classification column has been created and will be populated when you submit classifications below.
+            </p>
+          ) : (
+            <p style={{ fontSize: '12px', color: '#999' }}>Please verify your Excel file structure.</p>
+          )}
         </div>
         {radarData.length > 0 && renderRadar()}
       </div>
     )
   }
-
+ 
   if (!data) {
     return (
       <div className="missing-classifications-alert">
@@ -183,7 +188,7 @@ function MissingClassificationsAlert({ data }) {
       </div>
     )
   }
-
+ 
   if (!data.missingRows || data.missingRows.length === 0) {
     return (
       <div className="missing-classifications-alert">
@@ -199,7 +204,7 @@ function MissingClassificationsAlert({ data }) {
       </div>
     )
   }
-
+ 
   if (missingRows.length === 0) {
     return (
       <div className="missing-classifications-alert">
@@ -214,16 +219,16 @@ function MissingClassificationsAlert({ data }) {
       </div>
     )
   }
-
+ 
   const activeRows = activeCountry === 'India' ? indiaRows : usaRows
-
+ 
   return (
     <div className="missing-classifications-alert">
       <div className="alert-header">
         <h3>⚠️ Missing Classifications</h3>
         <span className="alert-badge">{missingRows.length}</span>
       </div>
-
+ 
       <div className="mc-country-tabs">
         <button
           className={`mc-tab-btn mc-india-btn ${activeCountry === 'India' ? 'active' : ''}`}
@@ -240,12 +245,12 @@ function MissingClassificationsAlert({ data }) {
           <span className="mc-tab-count">{usaRows.length}</span>
         </button>
       </div>
-
+ 
       {renderTable(activeRows, activeCountry)}
-
+ 
       {radarData.length > 0 && renderRadar()}
     </div>
   )
 }
-
+ 
 export default MissingClassificationsAlert

@@ -44,6 +44,17 @@ function ResourceFlags({ data, onNavigateToResourceFlags }) {
           }
         })
  
+        // If Classification column doesn't exist, create it
+        if (!classificationKey) {
+          console.warn('⚠️ Classification column not found. Creating a new one...')
+          classificationKey = 'Classification'
+          jsonData.forEach(row => {
+            if (!row[classificationKey]) {
+              row[classificationKey] = ''
+            }
+          })
+        }
+ 
         // Process data to separate by classification and country
         const countryByClassification = {}
  
