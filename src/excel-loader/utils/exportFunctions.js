@@ -52,7 +52,6 @@ export const exportToExcel = async (sheetData, headers, getFilteredData, selecte
   const idxFeb         = ci(['feb-26', 'feb'], headers);
   const idxMar         = ci(['mar-26', 'mar'], headers);
 
-  // Group rows by POC
   const pocMap = new Map();
   filteredData.forEach(row => {
     const poc = get(row, idxPoc) || 'Unknown';
@@ -62,7 +61,6 @@ export const exportToExcel = async (sheetData, headers, getFilteredData, selecte
 
   const wb = XLSXStyle.utils.book_new();
 
-  // --- Legend sheet (first tab) ---
   try {
     const csvText = await fetch('/legend.csv').then(r => r.text());
     const legendRows = csvText.trim().split('\n').map(line => {
@@ -214,7 +212,7 @@ export const exportToPDF = async (
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(255, 255, 255);
-      doc.text(title, margin, 26);
+      doc.text(title, pageWidth / 2, 26, { align: 'center' });
       if (subtitle) {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
