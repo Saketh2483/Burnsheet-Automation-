@@ -303,12 +303,6 @@ def update_combined_input(india_rate_card, hourly_rules, us_rate_card):
                             if "Variance" in headers and actual_rate is not None:
                                 variance = projected_rate - actual_rate
                                 ws.cell(row_idx, headers["Variance"]).value = round(variance, 2)
-                            
-                            # Fill monthly columns with projected rate
-                            rate_columns = ["Jan-26", "Feb-26", "Mar-26"]
-                            for col_name in rate_columns:
-                                if col_name in headers:
-                                    ws.cell(row_idx, headers[col_name]).value = round(projected_rate, 2)
             
             # === USA RATE CALCULATION ===
             else:  # Non-India locations
@@ -356,12 +350,6 @@ def update_combined_input(india_rate_card, hourly_rules, us_rate_card):
                                 if "Variance" in headers and actual_rate is not None:
                                     variance = projected_rate - actual_rate
                                     ws.cell(row_idx, headers["Variance"]).value = round(variance, 2)
-                                
-                                # Fill Jan-26, Feb-26, Mar-26 with same projected rate value
-                                rate_columns = ["Jan-26", "Feb-26", "Mar-26"]
-                                for col_name in rate_columns:
-                                    if col_name in headers:
-                                        ws.cell(row_idx, headers[col_name]).value = round(projected_rate, 2)
                     
                     elif location.lower() == "india":
                         # Fetch Offshore Talent billed under Onshore Key from hourlyRules
@@ -399,12 +387,6 @@ def update_combined_input(india_rate_card, hourly_rules, us_rate_card):
                                 if "Variance" in headers and actual_rate is not None:
                                     variance = projected_rate - actual_rate
                                     ws.cell(row_idx, headers["Variance"]).value = round(variance, 2)
-                                
-                                # Fill Jan-26, Feb-26, Mar-26 with same projected rate value
-                                rate_columns = ["Jan-26", "Feb-26", "Mar-26"]
-                                for col_name in rate_columns:
-                                    if col_name in headers:
-                                        ws.cell(row_idx, headers[col_name]).value = round(projected_rate, 2)
         
         # Save the updated workbook
         wb.save(COMBINED_INPUT_FILE)

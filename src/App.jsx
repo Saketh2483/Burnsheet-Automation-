@@ -42,7 +42,7 @@ function App({ onLogout }) {
   ];
   const [chatMessages, setChatMessages] = useState(initialChatMessages);
   const [chatInput, setChatInput] = useState('');
-  const [dollarValue, setDollarValue] = useState(initialChatMessages[0]?.text.match(/\d+(?:\.\d+)?/)?.[0] || '');
+  const [dollarValue, setDollarValue] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('India');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const chartBarRef = useRef(null);
@@ -115,6 +115,25 @@ function App({ onLogout }) {
     loadExcelFileCallback();
     handleOpenDashboard();
   }, [loadExcelFileCallback, handleOpenDashboard]);
+
+  // Calculate dollar value from first record: Hourly Rate(Rs) / Hourly Rate($)
+  useEffect(() => {
+    if (sheetData.length > 0 && headers.length > 0) {
+      const firstRecord = sheetData[0];
+      const hrRsIndex = headers.findIndex(h => h.toLowerCase().includes('hourly rate') && h.toLowerCase().includes('rs'));
+      const hrUsdIndex = headers.findIndex(h => h.toLowerCase().includes('hourly rate') && h.toLowerCase().includes('$'));
+      
+      if (hrRsIndex !== -1 && hrUsdIndex !== -1) {
+        const hourlyRateRs = parseFloat(firstRecord[hrRsIndex]);
+        const hourlyRateUsd = parseFloat(firstRecord[hrUsdIndex]);
+        
+        if (!isNaN(hourlyRateRs) && !isNaN(hourlyRateUsd) && hourlyRateUsd > 0) {
+          const calculatedValue = Math.round(hourlyRateRs / hourlyRateUsd);
+          setDollarValue(calculatedValue);
+        }
+      }
+    }
+  }, [sheetData, headers]);
 
   const handleCellChange = (rowIndex, cellIndex, newValue) => {
     handleCellChangeUtil(

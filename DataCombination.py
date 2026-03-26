@@ -156,10 +156,34 @@ def combine_excel_sheets(input_file, output_file):
                 elif header == "POC":
                     output_row[header_idx] = x
                 elif header in ["Jan-26", "Feb-26", "Mar-26"]:
-                    # Fill month columns with Projected Rate($) value
-                    projected_rate = row_data.get("Projected Rate($)", None)
-                    if projected_rate is not None:
-                        output_row[header_idx] = projected_rate
+                    # Read the actual month column values from input Excel
+                    # These columns are in date format, so we need to match by extracting month-year
+                    month_value = None
+                    target_month_year = header.lower()  # e.g., "jan-26"
+                    
+                    for key, value in row_data.items():
+                        if key and isinstance(key, datetime):
+                            # Extract month-year from datetime object
+                            month_str = key.strftime("%b-%y").lower()  # e.g., "jan-26"
+                            if month_str == target_month_year:
+                                month_value = value
+                                break
+                        elif key and isinstance(key, str):
+                            # Try to parse string dates in format "01-01-2026" (DD-MM-YYYY)
+                            try:
+                                parsed_date = datetime.strptime(key.strip(), "%d-%m-%Y")
+                                month_str = parsed_date.strftime("%b-%y").lower()
+                                if month_str == target_month_year:
+                                    month_value = value
+                                    break
+                            except (ValueError, AttributeError):
+                                # If parsing fails, try direct string matching
+                                key_lower = key.strip().lower()
+                                if key_lower == target_month_year or target_month_year in key_lower:
+                                    month_value = value
+                                    break
+                    
+                    output_row[header_idx] = month_value
                 else:
                     # Try to find the matching column in row_data with flexible matching
                     value_found = False
