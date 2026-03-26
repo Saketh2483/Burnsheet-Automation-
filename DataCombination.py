@@ -183,6 +183,10 @@ def combine_excel_sheets(input_file, output_file):
                                     month_value = value
                                     break
                     
+                    # Round to 2 decimal places if value is numeric
+                    if month_value is not None and isinstance(month_value, (int, float)):
+                        month_value = round(month_value, 2)
+                    
                     output_row[header_idx] = month_value
                 else:
                     # Try to find the matching column in row_data with flexible matching

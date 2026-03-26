@@ -131,7 +131,7 @@ export const TableCell = ({
       <td key={`cell-${rowIndex}-${cellIndex}`} className={`data-cell ${isEmpty ? 'missing-field' : ''} ${alignmentClass}`} data-column={headerName}>
         <input
           type="number"
-          step="0.01"
+          step="1"
           value={cell}
           onChange={(e) => handleCellChange(rowIndex, cellIndex, e.target.value)}
           className="timesheet-input"
