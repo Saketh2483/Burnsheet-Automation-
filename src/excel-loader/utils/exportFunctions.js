@@ -21,7 +21,6 @@ const DATA_HEADERS = [
 ];
 
 const ci = (keywords, headers) => headers.findIndex(h => keywords.some(k => h.toLowerCase().includes(k.toLowerCase())));
-
 const get = (row, idx) => (idx !== -1 && row[idx] != null ? row[idx] : '');
 
 export const exportToExcel = async (sheetData, headers, getFilteredData, selectedCountry, selectedTower, selectedMonth) => {
@@ -83,12 +82,10 @@ export const exportToExcel = async (sheetData, headers, getFilteredData, selecte
         Math.max(max, row[colIdx] ? String(row[colIdx]).length : 0), 0);
       return { wch: Math.min(maxLen + 2, 60) };
     });
-
     legendWs['!rows'] = legendRows.map((row) => {
       const maxLen = row.reduce((max, cell) => Math.max(max, cell ? String(cell).length : 0), 0);
       return { hpt: Math.min(Math.ceil(maxLen / 40) * 15, 60) };
     });
-
     legendHeaders.forEach((_, c) => {
       const addr = XLSXStyle.utils.encode_cell({ r: 0, c });
       if (legendWs[addr]) legendWs[addr].s = {
@@ -97,7 +94,6 @@ export const exportToExcel = async (sheetData, headers, getFilteredData, selecte
         border: BORDER
       };
     });
-
     for (let r = 1; r < legendRows.length; r++) {
       for (let c = 0; c < legendHeaders.length; c++) {
         const addr = XLSXStyle.utils.encode_cell({ r, c });
@@ -105,7 +101,6 @@ export const exportToExcel = async (sheetData, headers, getFilteredData, selecte
         legendWs[addr].s = { border: BORDER };
       }
     }
-
     XLSXStyle.utils.book_append_sheet(wb, legendWs, 'Legend');
   } catch (e) {
     console.warn('Legend CSV could not be loaded:', e.message);
@@ -146,7 +141,6 @@ export const exportToExcel = async (sheetData, headers, getFilteredData, selecte
       const labelAddr = XLSXStyle.utils.encode_cell({ r, c: 0 });
       if (!ws[labelAddr]) ws[labelAddr] = { t: 's', v: '' };
       ws[labelAddr].s = { fill: SKY_BLUE, font: { bold: true }, border: BORDER };
-
       const valueAddr = XLSXStyle.utils.encode_cell({ r, c: 1 });
       if (!ws[valueAddr]) ws[valueAddr] = { t: 's', v: '' };
       ws[valueAddr].s = { border: BORDER };
@@ -171,7 +165,6 @@ export const exportToExcel = async (sheetData, headers, getFilteredData, selecte
       const maxLen = dataRows.reduce((max, row) => Math.max(max, row[colIdx] ? String(row[colIdx]).length : 0), header.length);
       return { wch: Math.min(maxLen + 2, 50) };
     });
-
     dataColWidths[0] = { wch: Math.max(dataColWidths[0].wch, metaLabelMaxLen + 2) };
     dataColWidths[1] = { wch: Math.max(dataColWidths[1].wch, Math.min(metaValueMaxLen + 2, 50)) };
     ws['!cols'] = dataColWidths;
@@ -238,29 +231,65 @@ export const exportToPDF = async (
       await new Promise(r => setTimeout(r, 800));
     }
 
-    let firstChart = true;
-    const captureChart = async (ref, title, subtitle) => {
-      if (!ref.current) return;
+    // Capture all 4 charts as canvases
+    const captureCanvas = async (ref) => {
+      if (!ref.current) return null;
       await new Promise(r => setTimeout(r, 800));
-      const canvas = await html2canvas(ref.current, {
+      return await html2canvas(ref.current, {
         scale: 1.5, useCORS: true, backgroundColor: '#ffffff',
         width: ref.current.scrollWidth, height: ref.current.scrollHeight,
         scrollX: -99999, scrollY: -99999,
         windowWidth: ref.current.scrollWidth, windowHeight: ref.current.scrollHeight, x: 0, y: 0,
       });
-      if (!firstChart) doc.addPage();
-      firstChart = false;
-      addPageHeader(title, subtitle);
-      const imgW = usableWidth;
-      const imgH = (canvas.height / canvas.width) * imgW;
-      doc.addImage(canvas.toDataURL('image/png'), 'PNG', margin, 50, imgW, Math.min(imgH, pageHeight - 50 - margin));
     };
 
-    await captureChart(chartBarRef, 'Monthly Burn Comparison', 'Baseline Rate vs Monthly Burn Rate');
-    await captureChart(chartPieRef, 'Classification Distribution', 'Resource Flags');
-    await captureChart(chartHomeRef, 'H & M Tower Performance', 'Monthly Average Rate by Country');
-    await captureChart(chartMissingRef, 'Missing Classifications', 'Employees pending classification');
+    const [canvasBar, canvasPie, canvasHome, canvasMissing] = await Promise.all([
+      captureCanvas(chartBarRef),
+      captureCanvas(chartPieRef),
+      captureCanvas(chartHomeRef),
+      captureCanvas(chartMissingRef),
+    ]);
 
+    // Single dashboard page with 2x2 grid
+    addPageHeader('Rate Analysis Dashboard', new Date().toLocaleDateString());
+
+    const headerH = 40;
+    const gap = 10;
+    const cellW = (usableWidth - gap) / 2;
+    const cellH = (pageHeight - headerH - margin - gap) / 2;
+
+    const positions = [
+      { x: margin,           y: headerH + gap,           label: 'Monthly Burn Comparison' },
+      { x: margin + cellW + gap, y: headerH + gap,        label: 'Classification Distribution' },
+      { x: margin,           y: headerH + gap + cellH + gap, label: 'H & M Tower Performance' },
+      { x: margin + cellW + gap, y: headerH + gap + cellH + gap, label: 'Missing Classifications' },
+    ];
+
+    const canvases = [canvasBar, canvasPie, canvasHome, canvasMissing];
+
+    canvases.forEach((canvas, i) => {
+      if (!canvas) return;
+      const { x, y, label } = positions[i];
+
+      // Draw cell background border
+      doc.setDrawColor(200, 200, 200);
+      doc.rect(x, y, cellW, cellH);
+
+      // Chart label
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(80, 80, 80);
+      doc.text(label, x + cellW / 2, y + 10, { align: 'center' });
+
+      // Fit image inside cell with padding
+      const imgPad = 14;
+      const imgW = cellW - imgPad;
+      const imgH = (canvas.height / canvas.width) * imgW;
+      const finalH = Math.min(imgH, cellH - imgPad);
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', x + imgPad / 2, y + imgPad, imgW, finalH);
+    });
+
+    // Data tables
     const countryIndex = headers.findIndex(h => h.toLowerCase() === 'country');
     const indiaRows = sheetData.filter(row => row[countryIndex]?.toLowerCase() === 'india');
     const usaRows = sheetData.filter(row => row[countryIndex]?.toLowerCase() === 'usa');
@@ -314,10 +343,8 @@ export const saveToExcel = async (headers, sheetData) => {
     const ws = XLSX.utils.aoa_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Combined Data');
-    
     XLSX.writeFile(wb, 'Combined-Input-Updated.xlsx');
     alert('✅ Data saved successfully!\nFile: Combined-Input-Updated.xlsx');
-    console.log('Data saved to Combined-Input-Updated.xlsx');
   } catch (error) {
     console.error('Error saving file:', error);
     alert('❌ Error saving file: ' + error.message);
